@@ -12,6 +12,7 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -43,9 +44,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MemoryProviders\MemoryMappedFileProvider.cs" />
+    <Compile Include="Com\ICom.cs" />
+    <Compile Include="Com\PortCom.cs" />
+    <Compile Include="GameProvider\IGameProvider.cs" />
+    <Compile Include="GameProvider\ScSSProvider.cs" />
+    <Compile Include="DataProviders\MemoryMappedFileProvider.cs" />
+    <Compile Include="Models\SCSSdkClient.cs" />
+    <Compile Include="Models\SCSTelemetry.cs" />
+    <Compile Include="Models\TelemetryData.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\ConsoleLog.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

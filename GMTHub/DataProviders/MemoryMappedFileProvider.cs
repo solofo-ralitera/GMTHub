@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GMTHub.Models;
+using System;
 using System.Collections.Generic;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
@@ -34,7 +35,7 @@ namespace GMTHub.MemoryProviders
             HookException = null;
 
             try
-            {
+            { 
                 RawData = new byte[mapSize];
 
                 _memoryMappedHandle = MemoryMappedFile.CreateOrOpen(map, mapSize, MemoryMappedFileAccess.ReadWrite);
@@ -53,7 +54,6 @@ namespace GMTHub.MemoryProviders
         public void Disconnect()
         {
             Hooked = false;
-
             _memoryMappedView.Dispose();
             _memoryMappedHandle.Dispose();
         }
@@ -61,15 +61,15 @@ namespace GMTHub.MemoryProviders
         /// <summary>
         ///     reread data from memory view
         /// </summary>
-        public void Update()
+        public byte[] Update()
         {
             if (!Hooked || _memoryMappedView == null)
             {
-                return;
+                return null;
             }
-
             // Re-read data from the view.
             _memoryMappedView.ReadArray(0, RawData, 0, RawData.Length);
+            return RawData;
         }
     }
 }
