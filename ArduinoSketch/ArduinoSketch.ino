@@ -128,8 +128,10 @@ void loop() {
     return;
   }
 
+  // TODO set ici état/valeur pin
+
   // End of Data
   // Serial.println(ACK_READY);
-  Serial.flush();
+  // Serial.flush();
   resetSerial();
 }
