@@ -32,16 +32,19 @@ namespace GMTHub
 
         static void Main(string[] args)
         {
-            TelemetryData data;
+            GMTConfig config = new GMTConfig();
+            
             ICom com = new PortCom();
-            IGameProvider game = new ScSSProvider();
+            com.SetConfig(config);
+
+            IGameProvider game = new ScSSProvider(); // TODO: ici switch game
             if (!game.Init())
             {
                 ConsoleLog.Error("Game init error");
                 return;
             }
 
-            Console.WriteLine("GMTHGub started");
+            Console.WriteLine("GMTHub started");
             if(!com.Scan())
             {
                 ConsoleLog.Error("No arduino device found");
@@ -50,6 +53,7 @@ namespace GMTHub
                 return;
             }
 
+            TelemetryData data;
             while (true)
             {
                 data = Start(game);
@@ -59,9 +63,10 @@ namespace GMTHub
                     continue;
                 }
 
-                // TODO: send ack/ready message from mc chip
-                // Task.Delay(100);
-                Thread.Sleep(100);
+                // Wait for Com
+                // TODO move le wait juste avant l'envoi au Serial
+                // while(!com.WaitReady()) {}
+                com.SendData(data);
             }
         }
     }

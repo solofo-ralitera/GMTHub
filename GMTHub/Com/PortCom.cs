@@ -1,4 +1,5 @@
-﻿using GMTHub.Utils;
+﻿using GMTHub.Models;
+using GMTHub.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO.Ports;
@@ -12,11 +13,13 @@ namespace GMTHub.Com
     public class PortContainer
     {
         public string type; // Type of arduino board (NANO, UNO)
+        public byte number; // Number of the arduino board on this port
         public SerialPort port;
     }
 
     public class PortCom: ICom
     {
+        protected GMTConfig Config;
         public List<PortContainer> Ports = new List<PortContainer>();
 
         ~PortCom()
@@ -33,6 +36,11 @@ namespace GMTHub.Com
                     // Raf
                 }
             });
+        }
+
+        public void SetConfig(GMTConfig config)
+        {
+            Config = config;
         }
 
         protected SerialPort InitSerialPort(string portName)
@@ -53,24 +61,56 @@ namespace GMTHub.Com
                 ConsoleLog.Info("Scanning " + port);
                 SerialPort sp = InitSerialPort(port);
                 SendMessage(sp, "gmtscan");
-                Thread.Sleep(500); // Wait for arduino respond
+                Thread.Sleep(100); // Wait for arduino to respond
                 string response = ReadMessage(sp);
                 if(response.StartsWith("ack_gmtscan_"))
                 {
                     string boardType = response.Replace("ack_gmtscan_", "").Trim().ToUpper();
-                    ConsoleLog.Success("---- " + port + " " + boardType + " connected");
-                    Ports.Add(new PortContainer
+                    string[] aBoard = boardType.Split('-');
+                    try
                     {
-                        type = boardType,
-                        port = sp,
-                    });
-                } else
+                        byte boardNumber = Byte.TryParse(aBoard[1], out boardNumber) ? boardNumber : (byte)1;
+                        if(!Config.boardHasConfig(boardNumber))
+                        {
+                            throw new Exception("Board " + boardType + " has no configuration in GMTHub.ini");
+                        }
+                        Ports.Add(new PortContainer
+                        {
+                            type = aBoard[0],
+                            number = boardNumber,
+                            port = sp,
+                        });
+                        ConsoleLog.Success("---- " + port + " " + boardType + " connected");
+                    } 
+                    catch (Exception e)
+                    {
+                        ConsoleLog.Error("---- " + port + " " + boardType + " ERROR: "  + e.Message);
+                        sp.Close();
+                        sp.Dispose();
+                    }
+                }
+                else
                 {
                     sp.Close();
                     sp.Dispose();
                 }
             }
             return Ports.Count != 0;
+        }
+
+        protected bool WaitReady()
+        {
+            return Ports.TrueForAll((PortContainer port) =>
+            {
+                // TODO: test si le Com est libre
+                /*
+                while(!port.port.ReadExisting().StartsWith("ready_"))
+                {
+                    ConsoleLog.Info("Not yet");
+                    Thread.Sleep(100);
+                }*/
+                return true;
+            });
         }
 
         protected string ReadMessage(SerialPort sp)
@@ -81,7 +121,7 @@ namespace GMTHub.Com
             }
             catch (Exception ex)
             {
-                ConsoleLog.Error("SerialPort Error - Read message: " + ex.Message);
+                ConsoleLog.Error(sp.PortName + " Error - Read message: " + ex.Message);
                 return "";
             }
         }
@@ -92,11 +132,30 @@ namespace GMTHub.Com
             {
                 if (!sp.IsOpen) sp.Open();
                 sp.Write(message + "#");
+                ConsoleLog.Gray("SerialPort  message: " + message);
             }
             catch (Exception ex)
             {
                 ConsoleLog.Error("SerialPort Error - Send message: " + ex.Message);
             }
+        }
+
+        public void SendData(TelemetryData data)
+        {
+            // TODO send async each board
+            Ports.ForEach((PortContainer portContainer) =>
+            {
+                try
+                {
+                    List<PinConfig> pinConfig = Config.GetBoardConfig(portContainer.number);
+                    data.ProcessOutput(pinConfig);
+                    
+                }
+                catch (Exception ex)
+                {
+                    ConsoleLog.Error("SerialPort "+ portContainer.port.PortName + " Error - Send Data : " + ex.Message);
+                }
+            });
         }
     }
 }

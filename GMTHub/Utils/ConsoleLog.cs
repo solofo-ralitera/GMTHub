@@ -13,6 +13,13 @@ namespace GMTHub.Utils
             Console.WriteLine(message);
         }
 
+        public static void Gray(string message)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine(message);
+            Console.ResetColor();
+        }
+
         public static void Success(string message)
         {
             Console.ForegroundColor = ConsoleColor.DarkGreen;

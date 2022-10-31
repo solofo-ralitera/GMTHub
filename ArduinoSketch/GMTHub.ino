@@ -73,12 +73,15 @@
     #endif
 #endif
 
+#define BOARD_NUMBER "1"
+
 // Serial port configuration
 #define SERIAL_BAUD 9600
 #define SERIAL_EOL '#'
 
 // Acknoledgement message on scaning
-#define ACK_SCAN "ack_gmtscan_" BOARD
+#define ACK_SCAN "ack_gmtscan_" BOARD "-" BOARD_NUMBER
+#define ACK_READY "ready_" BOARD "-" BOARD_NUMBER
 
 // Needed for Serial read
 char c; // every incoming data from serial
@@ -86,6 +89,7 @@ String serialString;
 
 void setup() {
   Serial.begin(SERIAL_BAUD);
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
 void resetSerial() {
@@ -106,10 +110,26 @@ void loop() {
   if (serialString == "gmtscan") {
     // Send acknoledgement to C# program (when scaning available devices)
       Serial.println(ACK_SCAN);
+      Serial.flush();
       resetSerial();
       return;
   }
 
+  if(serialString == "")  {
+    // No thing to do
+    resetSerial();
+    return;
+  }
+
+  // Check si les données sont complètes
+  if(!serialString.startsWith(":") && !serialString.endsWith(":")) {
+    // No thing to do
+    resetSerial();
+    return;
+  }
+
   // End of Data
+  // Serial.println(ACK_READY);
+  Serial.flush();
   resetSerial();
 }

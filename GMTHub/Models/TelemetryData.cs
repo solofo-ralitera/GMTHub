@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GMTHub.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -43,5 +44,14 @@ namespace GMTHub.Models
         public bool airPressure_warning { get; internal set; }
 
         public bool battery_warning { get; internal set; }
+
+        public string ProcessOutput(List<PinConfig> pinConfig)
+        {
+            pinConfig.ForEach(config =>
+            {
+                // config.pin
+            });
+            return "";
+        }
     }
 }
