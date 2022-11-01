@@ -67,6 +67,7 @@ namespace GMTHub
                 // TODO move le wait juste avant l'envoi au Serial
                 // while(!com.WaitReady()) {}
                 com.SendData(data);
+                Thread.Sleep(10);
             }
         }
     }

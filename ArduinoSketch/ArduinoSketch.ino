@@ -1,3 +1,5 @@
+#include <Servo.h>
+
 #if defined(TEENSYDUINO) 
     //  --------------- Teensy -----------------
     #if defined(__AVR_ATmega32U4__)
@@ -84,27 +86,62 @@
 #define ACK_READY "ready_" BOARD "-" BOARD_NUMBER
 
 // Needed for Serial read
-char c; // every incoming data from serial
-String serialString;
+bool serialStringAvailable = false;
+String serialString = "";
+
+// TODO Dynamique ???
+Servo Servo;
 
 void setup() {
   Serial.begin(SERIAL_BAUD);
-  pinMode(LED_BUILTIN, OUTPUT);
-}
 
-void resetSerial() {
-  if(c == SERIAL_EOL) {
-    // Empty data
-    serialString = "";
-    c = 0;
+  // TODO: send message ici pour l'initialisation des pins
+  Servo.attach(3);
+  pinMode(7, OUTPUT);
+  pinMode(4, OUTPUT);
+
+  // wait for serial port to connect. Needed for native USB port only
+  while (!Serial) {
+    ;
   }
 }
 
-void loop() {
-  //Read serial data
+/*
+  SerialEvent occurs whenever a new data comes in the hardware serial RX. This
+  routine is run between each time loop() runs, so using delay inside loop can
+  delay response. Multiple bytes of data may be available.
+*/
+char inChar; // every incoming data from serial
+void serialEvent() {
   while (Serial.available() > 0) {
-    c = Serial.read();
-    serialString += c;
+    inChar = Serial.read();
+    if ((char)inChar == SERIAL_EOL) {
+      serialStringAvailable = true;
+      break;
+    }
+    if (inChar == '\n' || inChar == '\r') {
+      continue;
+    }
+    serialString += inChar;
+  }
+}
+
+void resetSerial() {
+  serialString = "";
+  inChar = 0;
+  serialStringAvailable = false;
+}
+
+void loop() {
+  if(serialStringAvailable == false) {
+    // Do nothing no data to process
+    return;
+  }
+  // serialString.trim();
+
+  if(serialString == "")  {
+    resetSerial();
+    return;
   }
 
   if (serialString == "gmtscan") {
@@ -115,23 +152,42 @@ void loop() {
       return;
   }
 
-  if(serialString == "")  {
-    // No thing to do
-    resetSerial();
-    return;
-  }
-
   // Check si les données sont complètes
   if(!serialString.startsWith(":") && !serialString.endsWith(":")) {
     // No thing to do
     resetSerial();
     return;
   }
+  
+  // Suppr le delim : au début de la chaine
+  // TODO remove le if après test
+  if(serialString.startsWith(":")) {
+    serialString.remove(0, 1);
+  }
 
-  // TODO set ici état/valeur pin
+  // :s03050:#    Test servo
+  // :d07001:#    Test digital
+  // :s03050d02001:#
+  while(serialString.length() > 6) {
+    short pin = serialString.substring(1, 3).toInt();
+    char code = serialString.charAt(0);
+    
+    // Digital output
+    if(code == 'd') {
+      short state = serialString.substring(5, 6).toInt();
+      digitalWrite(pin, state ? HIGH : LOW);
+    } 
+    // Servo
+    else if(code == 's') {
+      short angle = serialString.substring(3, 6).toInt();
+      Servo.write(angle); 
+    }
+    serialString.remove(0, 6);
+  }
 
   // End of Data
+  resetSerial();
   // Serial.println(ACK_READY);
   // Serial.flush();
-  resetSerial();
+
 }

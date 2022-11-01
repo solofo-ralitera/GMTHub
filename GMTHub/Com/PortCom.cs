@@ -148,8 +148,8 @@ namespace GMTHub.Com
                 try
                 {
                     List<PinConfig> pinConfig = Config.GetBoardConfig(portContainer.number);
-                    data.ProcessOutput(pinConfig);
-                    
+                    string cmd = data.ProcessOutput(pinConfig);
+                    SendMessage(portContainer.port, $":{cmd}:");
                 }
                 catch (Exception ex)
                 {

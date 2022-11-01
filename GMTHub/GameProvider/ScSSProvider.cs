@@ -48,21 +48,38 @@ namespace GMTHub.GameProvider
                     notfilled = true
                 };
             }
-            if(telemetryData.Paused)
+            if (telemetryData.Paused)
             {
                 return new TelemetryData
                 {
                     notfilled = true
                 };
             }
- 
+
             return new TelemetryData
             {
                 notfilled = false,
                 rpm = (ushort)telemetryData.TruckValues_CurrentValues_DashboardValues_RPM,
-                rpm_max = (ushort) telemetryData.TruckValues_ConstantsValues_MotorValues_EngineRpmMax,
+                rpm_max = (ushort)telemetryData.TruckValues_ConstantsValues_MotorValues_EngineRpmMax,
                 speed = (short)telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value,
-                gear = (sbyte)telemetryData.TruckValues_CurrentValues_DashboardValues_GearDashboards
+                gear = (sbyte)telemetryData.TruckValues_CurrentValues_DashboardValues_GearDashboards,
+                odometer = telemetryData.TruckValues_CurrentValues_DashboardValues_Odometer,
+
+                electric_on = (bool)telemetryData.TruckValues_CurrentValues_ElectricEnabled,
+                engine_on = (bool)telemetryData.TruckValues_CurrentValues_EngineEnabled,
+
+                parkingBrake = (bool)telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_ParkingBrake,
+
+                blinkerLeft = (bool)telemetryData.TruckValues_CurrentValues_LightsValues_BlinkerLeftOn,
+                blinkerRight = (bool)telemetryData.TruckValues_CurrentValues_LightsValues_BlinkerRightOn,
+                hazardLight = (bool)telemetryData.TruckValues_CurrentValues_LightsValues_HazardWarningLights,
+
+                fuel = telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_Amount,
+                fuel_averageConsumption = telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_AverageConsumption,
+                fuel_range = telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_Range,
+                fuel_capacity = telemetryData.TruckValues_ConstantsValues_CapacityValues_Fuel,
+                fuel_warning = (bool)telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_FuelW,
+
             };
         }
     }
