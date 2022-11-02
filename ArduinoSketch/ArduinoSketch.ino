@@ -1,5 +1,9 @@
 #include <Servo.h>
+#include "LedController.hpp" // https://github.com/noah1510/LedController
 
+#define BOARD_NUMBER "1"
+
+//// DON'T EDIT BELOW /////////////////////////
 #if defined(TEENSYDUINO) 
     //  --------------- Teensy -----------------
     #if defined(__AVR_ATmega32U4__)
@@ -75,13 +79,11 @@
     #endif
 #endif
 
-#define BOARD_NUMBER "1"
-
 // Serial port configuration
 #define SERIAL_BAUD 9600
 #define SERIAL_EOL '#'
 
-// Acknoledgement message on scaning
+// Scaning acknoledgement message
 #define ACK_SCAN "ack_gmtscan_" BOARD "-" BOARD_NUMBER
 #define ACK_READY "ready_" BOARD "-" BOARD_NUMBER
 
@@ -89,16 +91,13 @@
 bool serialStringAvailable = false;
 String serialString = "";
 
-// TODO Dynamique ???
-Servo Servo;
+// TODO use idDef selon le board
+boolean arePinsInitialized[20] = { false };
+Servo availableServos[20];
+LedController<1,1> available7segMax7219[3];
 
 void setup() {
   Serial.begin(SERIAL_BAUD);
-
-  // TODO: send message ici pour l'initialisation des pins
-  Servo.attach(3);
-  pinMode(7, OUTPUT);
-  pinMode(4, OUTPUT);
 
   // wait for serial port to connect. Needed for native USB port only
   while (!Serial) {
@@ -119,9 +118,9 @@ void serialEvent() {
       serialStringAvailable = true;
       break;
     }
-    if (inChar == '\n' || inChar == '\r') {
+    /*if (inChar == '\n' || inChar == '\r') {
       continue;
-    }
+    }*/
     serialString += inChar;
   }
 }
@@ -134,22 +133,22 @@ void resetSerial() {
 
 void loop() {
   if(serialStringAvailable == false) {
-    // Do nothing no data to process
+    // No data to process
     return;
   }
-  // serialString.trim();
-
+  serialString.trim();
   if(serialString == "")  {
+    // No data to process
     resetSerial();
     return;
   }
 
   if (serialString == "gmtscan") {
     // Send acknoledgement to C# program (when scaning available devices)
-      Serial.println(ACK_SCAN);
-      Serial.flush();
-      resetSerial();
-      return;
+    Serial.println(ACK_SCAN);
+    Serial.flush();
+    resetSerial();
+    return;
   }
 
   // Check si les données sont complètes
@@ -166,28 +165,74 @@ void loop() {
   }
 
   // :s03050:#    Test servo
-  // :d07001:#    Test digital
-  // :s03050d02001:#
-  while(serialString.length() > 6) {
+  // :d071:#    Test digital
+  // :a05066:#  Test analog
+  // :m100906081234:#   Test Max7219
+  // :s03050d021:#
+  // :s03052d070d040:#
+  // 4 :length min des commande
+  while(serialString.length() > 4) {
     short pin = serialString.substring(1, 3).toInt();
     char code = serialString.charAt(0);
-    
+
     // Digital output
     if(code == 'd') {
-      short state = serialString.substring(5, 6).toInt();
+      if(arePinsInitialized[pin] == false) {
+        pinMode(pin, OUTPUT);
+        arePinsInitialized[pin] = true;
+      }
+      short state = serialString.substring(3, 4).toInt();
       digitalWrite(pin, state ? HIGH : LOW);
-    } 
+      serialString.remove(0, 4);
+    }
+    // Analog output
+    else if(code == 'a') {
+      if(arePinsInitialized[pin] == false) {
+        pinMode(pin, OUTPUT);
+        arePinsInitialized[pin] = true;
+      }      
+      short value = serialString.substring(3, 6).toInt();
+      analogWrite(pin, value); 
+      serialString.remove(0, 6);
+    }
     // Servo
     else if(code == 's') {
+      if(arePinsInitialized[pin] == false) {
+        availableServos[pin].attach(pin);
+        arePinsInitialized[pin] = true;
+      }
       short angle = serialString.substring(3, 6).toInt();
-      Servo.write(angle); 
+      availableServos[pin].write(angle); 
+      serialString.remove(0, 6);
     }
-    serialString.remove(0, 6);
+    // Max 79XX Display
+    else if(code == 'm') {
+      // m[2 DIN][2 CS][2 CLK][2 Digit length][8 number to display]
+      // :m100906041002:#
+      // :m161514040000:#
+      // :s03135d040a05000m100906040002d071:#
+      short pinCS = serialString.substring(3, 5).toInt();
+      short pinCLK = serialString.substring(5, 7).toInt();
+      short digitLen = serialString.substring(7, 9).toInt();
+      if(arePinsInitialized[pin] == false) {
+        available7segMax7219[pin] = LedController<1,1>(pin, pinCLK, pinCS); // DIN,CLK,CS
+        available7segMax7219[pin].setIntensity(8);
+        available7segMax7219[pin].clearMatrix();
+        arePinsInitialized[pin] = true;
+      }
+      String numberToDisplay = serialString.substring(9, 9 + digitLen);
+      for(int i=0; i < digitLen; i++) {
+        available7segMax7219[pin].setChar(0, i, numberToDisplay[i], false);
+      }
+      serialString.remove(0, 9 + digitLen);
+    }
+    else {
+      // Fallback
+      serialString.remove(0, 6);
+    }
+
   }
 
   // End of Data
   resetSerial();
-  // Serial.println(ACK_READY);
-  // Serial.flush();
-
 }

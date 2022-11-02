@@ -27,12 +27,12 @@ namespace GMTHub.Utils
             try
             {
                 Data = deviceConfig.ReadFile("GMTHub.ini");
+                GetBoards();
             }
             catch (Exception ex)
             {
                 ConsoleLog.Error("File GMTHUb error: " + ex.Message);
             }
-            GetBoards();
         }
 
         public bool boardHasConfig(byte boardNumber)

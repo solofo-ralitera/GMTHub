@@ -8,6 +8,18 @@ namespace GMTHub.Utils
 {
     public static class ConsoleLog
     {
+        public static void Debug(string message)
+        {
+#if DEBUG
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine(message);
+            Console.ResetColor();
+#else
+            
+#endif
+        }
+
+
         public static void Info(string message)
         {
             Console.WriteLine(message);

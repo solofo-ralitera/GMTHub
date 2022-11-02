@@ -132,7 +132,7 @@ namespace GMTHub.Com
             {
                 if (!sp.IsOpen) sp.Open();
                 sp.Write(message + "#");
-                ConsoleLog.Gray("SerialPort  message: " + message);
+                ConsoleLog.Debug("SerialPort  message: " + message);
             }
             catch (Exception ex)
             {

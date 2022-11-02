@@ -55,13 +55,15 @@ namespace GMTHub.GameProvider
                     notfilled = true
                 };
             }
-
             return new TelemetryData
             {
                 notfilled = false,
                 rpm = (ushort)telemetryData.TruckValues_CurrentValues_DashboardValues_RPM,
                 rpm_max = (ushort)telemetryData.TruckValues_ConstantsValues_MotorValues_EngineRpmMax,
-                speed = (short)telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value,
+                speed_ms = (ushort)Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value),
+                speed_kph = (ushort)(Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value) * 3.6f),
+                speed_Mph = (ushort)(Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value) * 2.25f),
+
                 gear = (sbyte)telemetryData.TruckValues_CurrentValues_DashboardValues_GearDashboards,
                 odometer = telemetryData.TruckValues_CurrentValues_DashboardValues_Odometer,
 
