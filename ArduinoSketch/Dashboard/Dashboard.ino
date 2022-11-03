@@ -2,6 +2,7 @@
 #include "LedController.hpp" // https://github.com/noah1510/LedController
 
 #define BOARD_NUMBER "1"
+#define TOTAL_NUMBER_OF_PIN 20
 
 //// DON'T EDIT BELOW /////////////////////////
 #if defined(TEENSYDUINO) 
@@ -91,10 +92,10 @@
 bool serialStringAvailable = false;
 String serialString = "";
 
-// TODO use idDef selon le board
-boolean arePinsInitialized[20] = { false };
-Servo availableServos[20];
-LedController<1,1> available7segMax7219[3];
+// TODO à optimiser la taille des tableaux à init
+boolean arePinsInitialized[TOTAL_NUMBER_OF_PIN] = { false };
+Servo availableServos[TOTAL_NUMBER_OF_PIN];
+LedController<1,1> available7segMax7219[TOTAL_NUMBER_OF_PIN];
 
 void setup() {
   Serial.begin(SERIAL_BAUD);
@@ -170,7 +171,7 @@ void loop() {
   // :m100906081234:#   Test Max7219
   // :s03050d021:#
   // :s03052d070d040:#
-  // 4 :length min des commande
+  // 4 :length min des commandes
   while(serialString.length() > 4) {
     short pin = serialString.substring(1, 3).toInt();
     char code = serialString.charAt(0);
@@ -205,26 +206,27 @@ void loop() {
       availableServos[pin].write(angle); 
       serialString.remove(0, 6);
     }
-    // Max 79XX Display
+    // Max 7seg Display
     else if(code == 'm') {
-      // m[2 DIN][2 CS][2 CLK][2 Digit length][8 number to display]
-      // :m100906041002:#
-      // :m161514040000:#
-      // :s03135d040a05000m100906040002d071:#
-      short pinCS = serialString.substring(3, 5).toInt();
-      short pinCLK = serialString.substring(5, 7).toInt();
-      short digitLen = serialString.substring(7, 9).toInt();
-      if(arePinsInitialized[pin] == false) {
-        available7segMax7219[pin] = LedController<1,1>(pin, pinCLK, pinCS); // DIN,CLK,CS
-        available7segMax7219[pin].setIntensity(8);
-        available7segMax7219[pin].clearMatrix();
-        arePinsInitialized[pin] = true;
+      // m[2 PIN][2 DIN][2 CS][2 CLK][2 Digit length][8 number to display]
+      // :m1616181704   0#:
+      short pinDIN = serialString.substring(3, 5).toInt();
+      short pinCS = serialString.substring(5, 7).toInt();
+      short pinCLK = serialString.substring(7, 9).toInt();
+      short displayOffset = serialString.substring(9, 11).toInt();
+      short digitLen = serialString.substring(11, 13).toInt();
+      // Use pinDIN as key to allow up to 3 configurations on a single 7seg
+      if(arePinsInitialized[pinDIN] == false) {
+        available7segMax7219[pinDIN] = LedController<1,1>(pinDIN, pinCLK, pinCS); // DIN,CLK,CS
+        available7segMax7219[pinDIN].setIntensity(8);
+        available7segMax7219[pinDIN].clearMatrix();
+        arePinsInitialized[pinDIN] = true;
       }
-      String numberToDisplay = serialString.substring(9, 9 + digitLen);
+      String numberToDisplay = serialString.substring(13, 13 + digitLen);
       for(int i=0; i < digitLen; i++) {
-        available7segMax7219[pin].setChar(0, i, numberToDisplay[i], false);
+        available7segMax7219[pinDIN].setChar(0, displayOffset + i, numberToDisplay[i], false);
       }
-      serialString.remove(0, 9 + digitLen);
+      serialString.remove(0, 13 + digitLen);
     }
     else {
       // Fallback

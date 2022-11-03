@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
+using System.Collections;
+using System.Globalization;
 
 namespace GMTHub.Utils
 {
@@ -20,7 +22,67 @@ namespace GMTHub.Utils
     public class PinConfig
     {
         public byte pin;
-        public Dictionary<string, string> config;
+
+        /**
+         * known types:
+         *  servo
+         *  digital
+         *  analog
+         *  max7seg
+         *  analogdisc
+         * */
+        public string output_type;
+
+        public bool disabled = false;
+
+        public string data_binding;
+        // For servo
+        public ushort servo_max_range = 90;
+        public float servo_step_value = 1f;
+        public ushort servo_relative_min = 0;
+        public ushort servo_relative_max;
+        public bool servo_reverse_rotation = false;
+
+        // Common data
+        public float data_offset = 0f;
+        public float data_min_value = 0f;
+        public float data_max_value;
+
+        // 7Seg
+        public ushort din_pin = 16;
+        public ushort cs_pin = 18;
+        public ushort clk_pin = 17;
+        public ushort digit_length = 4;
+        public bool reverse_digit = false;
+        public ushort display_offset = 0;
+
+        // Anlogdisc
+        public string discrete_value;
+
+        public void SetAttributes(Dictionary<string, string> pinConfigs)
+        {
+            ushort.TryParse(DictUtils.GetString(pinConfigs, "servo_max_range"), out servo_max_range);
+            ushort.TryParse(DictUtils.GetString(pinConfigs, "servo_relative_min"), out servo_relative_min);
+            ushort.TryParse(DictUtils.GetString(pinConfigs, "servo_relative_max"), out servo_relative_max);
+            ushort.TryParse(DictUtils.GetString(pinConfigs, "cs_pin"), out cs_pin);
+            ushort.TryParse(DictUtils.GetString(pinConfigs, "clk_pin"), out clk_pin);
+            ushort.TryParse(DictUtils.GetString(pinConfigs, "digit_length"), out digit_length);
+            ushort.TryParse(DictUtils.GetString(pinConfigs, "display_offset"), out display_offset);
+            
+            Single.TryParse(DictUtils.GetString(pinConfigs, "servo_step_value"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out servo_step_value);
+            Single.TryParse(DictUtils.GetString(pinConfigs, "data_offset"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out data_offset);
+            Single.TryParse(DictUtils.GetString(pinConfigs, "data_min_value"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out data_min_value);
+            Single.TryParse(DictUtils.GetString(pinConfigs, "data_max_value"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out data_max_value);
+
+            output_type = DictUtils.GetString(pinConfigs, "output_type", "");
+            data_binding = DictUtils.GetString(pinConfigs, "data_binding", "");
+            discrete_value = DictUtils.GetString(pinConfigs, "discrete_value", "");
+
+            bool.TryParse(DictUtils.GetString(pinConfigs, "servo_reverse_rotation"), out servo_reverse_rotation);
+            bool.TryParse(DictUtils.GetString(pinConfigs, "disabled"), out disabled);
+            bool.TryParse(DictUtils.GetString(pinConfigs, "reverse_digit"), out reverse_digit);
+
+        }
     }
 
     public class GMTConfig
@@ -100,16 +162,18 @@ namespace GMTHub.Utils
                         string[] boardPin = item.SectionName.Trim().Split('.');
                         byte boardNumber = byte.Parse(boardPin[0].Replace("BOARD_", "").Trim());
                         byte pinNumber = byte.Parse(boardPin[1].Replace("PIN_", "").Trim());
-                        Dictionary<string, string> pinConfig = new Dictionary<string, string>();
+                        Dictionary<string, string> pinConfigs = new Dictionary<string, string>();
                         foreach (KeyData key in item.Keys)
                         {
-                            pinConfig.Add(key.KeyName.Trim(), key.Value.Trim());
+                            pinConfigs.Add(key.KeyName.Trim(), key.Value.Trim());
                         }
-                        Boards[boardNumber].pinConfig.Add(new PinConfig()
+
+                        PinConfig pinConfig = new PinConfig()
                         {
                             pin = pinNumber,
-                            config = pinConfig
-                        });
+                        };
+                        pinConfig.SetAttributes(pinConfigs);
+                        Boards[boardNumber].pinConfig.Add(pinConfig);
                     }
                     catch (Exception ex)
                     {

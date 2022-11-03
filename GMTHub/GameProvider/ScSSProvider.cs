@@ -67,20 +67,55 @@ namespace GMTHub.GameProvider
                 gear = (sbyte)telemetryData.TruckValues_CurrentValues_DashboardValues_GearDashboards,
                 odometer = telemetryData.TruckValues_CurrentValues_DashboardValues_Odometer,
 
-                electric_on = (bool)telemetryData.TruckValues_CurrentValues_ElectricEnabled,
-                engine_on = (bool)telemetryData.TruckValues_CurrentValues_EngineEnabled,
+                oilTemperature = telemetryData.TruckValues_CurrentValues_DashboardValues_OilTemperature,
+                oilPressure = telemetryData.TruckValues_CurrentValues_DashboardValues_OilPressure,
+                oilPressure_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_OilPressure,
 
-                parkingBrake = (bool)telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_ParkingBrake,
+                waterTemperature = telemetryData.TruckValues_CurrentValues_DashboardValues_WaterTemperature,
+                waterTemperature_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_WaterTemperature,
 
-                blinkerLeft = (bool)telemetryData.TruckValues_CurrentValues_LightsValues_BlinkerLeftOn,
-                blinkerRight = (bool)telemetryData.TruckValues_CurrentValues_LightsValues_BlinkerRightOn,
-                hazardLight = (bool)telemetryData.TruckValues_CurrentValues_LightsValues_HazardWarningLights,
+                adblue = telemetryData.TruckValues_CurrentValues_DashboardValues_AdBlue,
+                adblue_capacity = telemetryData.TruckValues_ConstantsValues_CapacityValues_AdBlue,
+                adblue_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AdBlue,
+                adblue_pct = (byte) (telemetryData.TruckValues_CurrentValues_DashboardValues_AdBlue * 100 / telemetryData.TruckValues_ConstantsValues_CapacityValues_AdBlue),
+
+                airPressure = telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_AirPressure,
+                airPressure_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AirPressure 
+                    || telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AirPressureEmergency,
+
+                batteryVoltage = telemetryData.TruckValues_CurrentValues_DashboardValues_BatteryVoltage,
+                batteryVoltage_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_BatteryVoltage,
 
                 fuel = telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_Amount,
                 fuel_averageConsumption = telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_AverageConsumption,
                 fuel_range = telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_Range,
                 fuel_capacity = telemetryData.TruckValues_ConstantsValues_CapacityValues_Fuel,
-                fuel_warning = (bool)telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_FuelW,
+                fuel_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_FuelW,
+                fuel_pct = (byte) (telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_Amount * 100 / telemetryData.TruckValues_ConstantsValues_CapacityValues_Fuel),
+
+                warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_WaterTemperature
+                    || telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AdBlue
+                    || telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AirPressure
+                    || telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AirPressureEmergency
+                    || telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_BatteryVoltage
+                    || telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_OilPressure
+                    || telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_FuelW,
+
+                electric_on = telemetryData.TruckValues_CurrentValues_ElectricEnabled,
+                engine_on = telemetryData.TruckValues_CurrentValues_EngineEnabled,
+
+                parkingBrake = telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_ParkingBrake,
+
+                blinkerLeft = telemetryData.TruckValues_CurrentValues_LightsValues_BlinkerLeftOn,
+                blinkerRight = telemetryData.TruckValues_CurrentValues_LightsValues_BlinkerRightOn,
+                hazardLight = telemetryData.TruckValues_CurrentValues_LightsValues_HazardWarningLights,
+
+                speed_limit = telemetryData.NavigationValues_SpeedLimit,
+
+                // TODO calculated warning
+                // si frein parkin activé et accelerateur et vitesse != N
+                // Si differential lock et vitesse elevé
+                // Si depassement limitation vitesse
 
             };
         }
