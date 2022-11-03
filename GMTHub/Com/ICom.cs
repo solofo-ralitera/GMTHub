@@ -1,4 +1,5 @@
-﻿using GMTHub.Models;
+﻿using GMTHub.GameProvider;
+using GMTHub.Models;
 using GMTHub.Utils;
 using System;
 using System.Collections.Generic;
@@ -15,5 +16,7 @@ namespace GMTHub.Com
         void SetConfig(GMTConfig config);
 
         void SendData(TelemetryData data);
+
+        Task ProcessAllPorts(IGameProvider game);
     }
 }

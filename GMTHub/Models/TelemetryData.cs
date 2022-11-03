@@ -51,10 +51,10 @@ namespace GMTHub.Models
 
         public bool battery_warning { get; internal set; }
 
-        public string ProcessOutput(List<PinConfig> pinConfigs)
+        public string ProcessOutput(BoardConfig boardConfig)
         {
             string cmd = "";
-            pinConfigs.ForEach(pinConfig =>
+            boardConfig.pinConfig.ForEach(pinConfig =>
             {
                 cmd += ProcessPin(pinConfig);
             });

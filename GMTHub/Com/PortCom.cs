@@ -1,4 +1,5 @@
-﻿using GMTHub.Models;
+﻿using GMTHub.GameProvider;
+using GMTHub.Models;
 using GMTHub.Utils;
 using System;
 using System.Collections.Generic;
@@ -74,13 +75,14 @@ namespace GMTHub.Com
                         {
                             throw new Exception("Board " + boardType + " has no configuration in GMTHub.ini");
                         }
+                        BoardConfig boardConfig = Config.GetBoardConfig(boardNumber);
                         Ports.Add(new PortContainer
                         {
                             type = aBoard[0],
                             number = boardNumber,
                             port = sp,
                         });
-                        ConsoleLog.Success("---- " + port + " " + boardType + " connected");
+                        ConsoleLog.Success($"---- {port} BOARD {boardConfig.name} ({boardNumber}) connected");
                     } 
                     catch (Exception e)
                     {
@@ -98,19 +100,36 @@ namespace GMTHub.Com
             return Ports.Count != 0;
         }
 
-        protected bool WaitReady()
+        public async Task ProcessAllPorts(IGameProvider game)
         {
-            return Ports.TrueForAll((PortContainer port) =>
+            var tasks = new List<Task>();
+            Ports.ForEach((PortContainer portContainer) =>
             {
-                // TODO: test si le Com est libre
-                /*
-                while(!port.port.ReadExisting().StartsWith("ready_"))
+                BoardConfig boardConfig = Config.GetBoardConfig(portContainer.number);
+                tasks.Add(Task.Factory.StartNew((Object obj) =>
                 {
-                    ConsoleLog.Info("Not yet");
-                    Thread.Sleep(100);
-                }*/
-                return true;
+                    var data = (dynamic)obj;
+                    ProcessPort(data.game, data.boardConfig);
+                }, new { game = game, boardConfig = boardConfig }));
+
             });
+            await Task.WhenAll(tasks);
+        }
+
+        public void ProcessPort(IGameProvider game, BoardConfig boardConfig)
+        {
+            TelemetryData data;
+            while (true)
+            {
+                data = game.GetData();
+                if (data.notfilled)
+                {
+                    Thread.Sleep(boardConfig.refreshDelay);
+                    continue;
+                }
+                SendData(data);
+                Thread.Sleep(boardConfig.refreshDelay);
+            }
         }
 
         protected string ReadMessage(SerialPort sp)
@@ -147,8 +166,8 @@ namespace GMTHub.Com
             {
                 try
                 {
-                    List<PinConfig> pinConfig = Config.GetBoardConfig(portContainer.number);
-                    string cmd = data.ProcessOutput(pinConfig);
+                    BoardConfig boardConfig = Config.GetBoardConfig(portContainer.number);
+                    string cmd = data.ProcessOutput(boardConfig);
                     SendMessage(portContainer.port, $":{cmd}:");
                 }
                 catch (Exception ex)

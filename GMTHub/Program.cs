@@ -14,22 +14,6 @@ namespace GMTHub
 {
     internal class Program
     {
-        static TelemetryData Start(IGameProvider game)
-        {
-            try
-            {
-                return game.Loop();
-            }
-            catch (Exception ex)
-            {
-                ConsoleLog.Error("ERROR: " + ex.Message);
-                return new TelemetryData
-                {
-                    notfilled = true
-                };
-            }
-        }
-
         static void Main(string[] args)
         {
             GMTConfig config = new GMTConfig();
@@ -52,23 +36,8 @@ namespace GMTHub
                 Main(args);
                 return;
             }
-
-            TelemetryData data;
-            while (true)
-            {
-                data = Start(game);
-                if (data.notfilled)
-                {
-                    Thread.Sleep(3000);
-                    continue;
-                }
-
-                // Wait for Com
-                // TODO move le wait juste avant l'envoi au Serial
-                // while(!com.WaitReady()) {}
-                com.SendData(data);
-                Thread.Sleep(10);
-            }
+            Task task = com.ProcessAllPorts(game);
+            task.Wait();
         }
     }
 }

@@ -10,6 +10,13 @@ using System.Text.RegularExpressions;
 
 namespace GMTHub.Utils
 {
+    public class BoardConfig
+    {
+        public string name;
+        public ushort refreshDelay;
+        public List<PinConfig> pinConfig;
+    }
+
     public class PinConfig
     {
         public byte pin;
@@ -19,7 +26,7 @@ namespace GMTHub.Utils
     public class GMTConfig
     {
         protected IniData Data;
-        public Dictionary<byte, List<PinConfig>> Boards = new Dictionary<byte, List<PinConfig>>();
+        public Dictionary<byte, BoardConfig> Boards = new Dictionary<byte, BoardConfig>();
         
         public GMTConfig()
         {
@@ -37,14 +44,14 @@ namespace GMTHub.Utils
 
         public bool boardHasConfig(byte boardNumber)
         {
-            List<PinConfig> res;
-            return Boards.TryGetValue(boardNumber, out res) && res.Count > 0;
+            BoardConfig res;
+            return Boards.TryGetValue(boardNumber, out res) && res.pinConfig.Count > 0;
         }
 
-        public List<PinConfig> GetBoardConfig(byte boardNumber)
+        public BoardConfig GetBoardConfig(byte boardNumber)
         {
-            List<PinConfig> res;
-            if(Boards.TryGetValue(boardNumber, out res) && res.Count > 0)
+            BoardConfig res;
+            if(Boards.TryGetValue(boardNumber, out res) && res.pinConfig.Count > 0)
             {
                 return res;
             }
@@ -64,7 +71,21 @@ namespace GMTHub.Utils
                     {
                         byte boardNumber = byte.Parse(item.SectionName.Replace("BOARD_", "").Trim());
                         // boardsNumber.Add(boardNumber);
-                        Boards.Add(boardNumber, new List<PinConfig>());
+                        string name = item.Keys["board_name"] ?? item.SectionName;
+                        ushort refreshDelay;
+                        if(! ushort.TryParse(item.Keys["fps"], out refreshDelay))
+                        {
+                            refreshDelay = 25; // Correspond à 40fps
+                        } else
+                        {
+                            refreshDelay = (ushort)(1000 / refreshDelay);
+                        }
+                        Boards.Add(boardNumber, new BoardConfig()
+                        {
+                            name = name,
+                            refreshDelay = refreshDelay,
+                            pinConfig = new List<PinConfig>(),
+                        });
                     }
                     catch (Exception ex)
                     {
@@ -84,7 +105,7 @@ namespace GMTHub.Utils
                         {
                             pinConfig.Add(key.KeyName.Trim(), key.Value.Trim());
                         }
-                        Boards[boardNumber].Add(new PinConfig()
+                        Boards[boardNumber].pinConfig.Add(new PinConfig()
                         {
                             pin = pinNumber,
                             config = pinConfig

@@ -35,7 +35,7 @@ namespace GMTHub.GameProvider
             return true;
         }
 
-        public TelemetryData Loop()
+        public TelemetryData GetData()
         {
             telemetryData = sdk.Convert(dataProvider.Update());
             // check if sdk is not running OR game paused

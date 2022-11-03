@@ -11,6 +11,6 @@ namespace GMTHub.GameProvider
     {
         bool Init();
 
-        TelemetryData Loop();
+        TelemetryData GetData();
     }
 }
