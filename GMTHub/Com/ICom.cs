@@ -15,7 +15,7 @@ namespace GMTHub.Com
 
         void SetConfig(GMTConfig config);
 
-        void SendData(TelemetryData data);
+        void SendData(PortContainer portContainer, TelemetryData data, BoardConfig boardConfig);
 
         Task ProcessAllPorts(IGameProvider game);
     }

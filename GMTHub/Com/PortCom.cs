@@ -18,6 +18,13 @@ namespace GMTHub.Com
         public SerialPort port;
     }
 
+    public class TaskParameter
+    {
+        public PortContainer portContainer;
+        public IGameProvider game;
+        public BoardConfig boardConfig;
+    }
+
     public class PortCom: ICom
     {
         protected GMTConfig Config;
@@ -108,15 +115,15 @@ namespace GMTHub.Com
                 BoardConfig boardConfig = Config.GetBoardConfig(portContainer.number);
                 tasks.Add(Task.Factory.StartNew((Object obj) =>
                 {
-                    var data = (dynamic)obj;
-                    ProcessPort(data.game, data.boardConfig);
-                }, new { game = game, boardConfig = boardConfig }));
+                    var data = (TaskParameter)obj;
+                    ProcessPort(data.portContainer, data.game, data.boardConfig);
+                }, new TaskParameter() { portContainer = portContainer,  game = game, boardConfig = boardConfig }));
 
             });
             await Task.WhenAll(tasks);
         }
 
-        public void ProcessPort(IGameProvider game, BoardConfig boardConfig)
+        public void ProcessPort(PortContainer portContainer, IGameProvider game, BoardConfig boardConfig)
         {
             TelemetryData data;
             while (true)
@@ -127,7 +134,7 @@ namespace GMTHub.Com
                     Thread.Sleep(boardConfig.refreshDelay);
                     continue;
                 }
-                SendData(data);
+                SendData(portContainer, data, boardConfig);
                 Thread.Sleep(boardConfig.refreshDelay);
             }
         }
@@ -159,22 +166,18 @@ namespace GMTHub.Com
             }
         }
 
-        public void SendData(TelemetryData data)
+        public void SendData(PortContainer portContainer, TelemetryData data, BoardConfig boardConfig)
         {
             // TODO send async each board
-            Ports.ForEach((PortContainer portContainer) =>
+            try
             {
-                try
-                {
-                    BoardConfig boardConfig = Config.GetBoardConfig(portContainer.number);
-                    string cmd = data.ProcessOutput(boardConfig);
-                    SendMessage(portContainer.port, $":{cmd}:");
-                }
-                catch (Exception ex)
-                {
-                    ConsoleLog.Error("SerialPort "+ portContainer.port.PortName + " Error - Send Data : " + ex.Message);
-                }
-            });
+                string cmd = data.ProcessOutput(boardConfig);
+                SendMessage(portContainer.port, $":{cmd}:");
+            }
+            catch (Exception ex)
+            {
+                ConsoleLog.Error("SerialPort " + portContainer.port.PortName + " Error - Send Data : " + ex.Message);
+            }
         }
     }
 }

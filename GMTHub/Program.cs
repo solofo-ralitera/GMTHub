@@ -17,11 +17,10 @@ namespace GMTHub
         static void Main(string[] args)
         {
             GMTConfig config = new GMTConfig();
-            
             ICom com = new PortCom();
             com.SetConfig(config);
 
-            IGameProvider game = new ScSSProvider(); // TODO: ici switch game
+            IGameProvider game = new ScSSProvider();
             if (!game.Init())
             {
                 ConsoleLog.Error("Game init error");
@@ -32,12 +31,14 @@ namespace GMTHub
             if(!com.Scan())
             {
                 ConsoleLog.Error("No arduino device found");
-                Thread.Sleep(5000);
+                Thread.Sleep(2000);
                 Main(args);
                 return;
             }
             Task task = com.ProcessAllPorts(game);
             task.Wait();
+            Thread.Sleep(1000);
+            Main(args); // Reboucle si arrêt des tasks
         }
     }
 }
