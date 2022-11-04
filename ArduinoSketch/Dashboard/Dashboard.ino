@@ -2,7 +2,7 @@
 #include "LedController.hpp" // https://github.com/noah1510/LedController
 
 #define BOARD_NUMBER "1"
-#define TOTAL_NUMBER_OF_PIN 20
+#define TOTAL_NUMBER_OF_PIN 19
 
 //// DON'T EDIT BELOW /////////////////////////
 #if defined(TEENSYDUINO) 
@@ -88,17 +88,295 @@
 #define ACK_SCAN "ack_gmtscan_" BOARD "-" BOARD_NUMBER
 #define ACK_READY "ready_" BOARD "-" BOARD_NUMBER
 
+ByteBlock Matrixdigits[30] = {
+  { // 0: 0
+    B00000000,
+    B00011000,
+    B00100100,
+    B00100100,
+    B00100100,
+    B00100100,
+    B00100100,
+    B00011000
+  }, { // 1: 1
+    B00000000,
+    B00001000,
+    B00011000,
+    B00001000,
+    B00001000,
+    B00001000,
+    B00001000,
+    B00011100
+  }, { // 2: 2
+    B00000000,
+    B00011000,
+    B00100100,
+    B00000100,
+    B00001000,
+    B00010000,
+    B00100000,
+    B00111100
+  }, { // 3: 3
+    B00000000,
+    B00011000,
+    B00100100,
+    B00000100,
+    B00001000,
+    B00000100,
+    B00100100,
+    B00011000
+  }, { // 4: 4
+    B00000000,
+    B00001100,
+    B00010100,
+    B00100100,
+    B00111100,
+    B00000100,
+    B00000100,
+    B00000100
+  }, { // 5: 5
+    B00000000,
+    B00111100,
+    B00100000,
+    B00111000,
+    B00000100,
+    B00000100,
+    B00100100,
+    B00011000
+  }, { // 6: 6
+    B00000000,
+    B00011000,
+    B00100000,
+    B00111000,
+    B00100100,
+    B00100100,
+    B00100100,
+    B00011000
+  }, { // 7: 7
+    B00000000,
+    B00111100,
+    B00000100,
+    B00000100,
+    B00001000,
+    B00010000,
+    B00100000,
+    B00100000
+  }, { // 8: 8
+    B00000000,
+    B00011000,
+    B00100100,
+    B00100100,
+    B00011000,
+    B00100100,
+    B00100100,
+    B00011000
+  }, { // 9: 9
+    B00000000,
+    B00011000,
+    B00100100,
+    B00100100,
+    B00100100,
+    B00011100,
+    B00000100,
+    B00011000
+  }, { // 10: 10
+    B00000000,
+    B01000110,
+    B11001001,
+    B01001001,
+    B01001001,
+    B01001001,
+    B01001001,
+    B11100110
+  }, { // 11: 11
+    B00000000,
+    B01000010,
+    B11000110,
+    B01000010,
+    B01000010,
+    B01000010,
+    B01000010,
+    B11100111
+  }, { // 12: 12
+    B00000000,
+    B01000110,
+    B11001001,
+    B01000001,
+    B01000010,
+    B01000100,
+    B01001000,
+    B11101111
+  }, { // 13: 13
+    B00000000,
+    B01000110,
+    B11001001,
+    B01000001,
+    B01000010,
+    B01000001,
+    B01001001,
+    B11100110
+  }, { // 14: 14
+    B00000000,
+    B01000011,
+    B11000101,
+    B01001001,
+    B01001111,
+    B01000001,
+    B01000001,
+    B11100001
+  }, { // 15: 15
+    B00000000,
+    B01001111,
+    B11001000,
+    B01001110,
+    B01000001,
+    B01000001,
+    B01001001,
+    B11100110
+  }, { // 16: 16
+    B00000000,
+    B01000110,
+    B11001000,
+    B01001110,
+    B01001001,
+    B01001001,
+    B01001001,
+    B11100110
+  }, { // 17: 17
+    B00000000,
+    B01001111,
+    B11000001,
+    B01000001,
+    B01000010,
+    B01000100,
+    B01001000,
+    B11101000
+  }, { // 18: 18
+    B00000000,
+    B01000110,
+    B11001001,
+    B01001001,
+    B01000110,
+    B01001001,
+    B01001001,
+    B11100110
+  }, { // 19: 19
+    B00000000,
+    B01000110,
+    B11001001,
+    B01001001,
+    B01001001,
+    B01000111,
+    B01000001,
+    B11100110
+  }, { // 20: square
+    B00000000,
+    B00000000,
+    B00111100,
+    B00111100,
+    B00111100,
+    B00111100,
+    B00000000,
+    B00000000
+  }, { // 21: X
+    B11000011,
+    B11100111,
+    B01111110,
+    B00111100,
+    B00111100,
+    B01111110,
+    B11100111,
+    B11000011
+  }, { // 22: !
+    B00000000,
+    B00011000,
+    B00011000,
+    B00011000,
+    B00000000,
+    B00011000,
+    B00011000,
+    B00000000
+  }, { // 23: <
+    B00000000,
+    B00000000,
+    B00001000,
+    B00010000,
+    B00100000,
+    B00010000,
+    B00001000,
+    B00000000
+  }, { // 24: >
+    B00000000,
+    B00000000,
+    B00010000,
+    B00001000,
+    B00000100,
+    B00001000,
+    B00010000,
+    B00000000
+  }, { // 25: N
+    B00000000,
+    B00100100,
+    B00110100,
+    B00110100,
+    B00101100,
+    B00101100,
+    B00100100,
+    B00000000
+  }, { // 26: R1
+    B00000000,
+    B11000010,
+    B10100110,
+    B10100010,
+    B11000010,
+    B10100010,
+    B10100010,
+    B10100111
+  }, { // 27: R2
+    B00000000,
+    B11000110,
+    B10101001,
+    B10100001,
+    B11000010,
+    B10100100,
+    B10101000,
+    B10101111
+  }, { // 28: R3
+    B00000000,
+    B11000110,
+    B10101001,
+    B10100001,
+    B11000010,
+    B10100001,
+    B10101001,
+    B10100110
+  }, { // 29: blank
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000
+  }
+};
+
 // Needed for Serial read
 bool serialStringAvailable = false;
 String serialString = "";
 
+//The total numer of Segments
+#define MAX72_SEGMENTS 1
+
 // TODO à optimiser la taille des tableaux à init
 boolean arePinsInitialized[TOTAL_NUMBER_OF_PIN] = { false };
 Servo availableServos[TOTAL_NUMBER_OF_PIN];
-LedController<1,1> available7segMax7219[TOTAL_NUMBER_OF_PIN];
+LedController<MAX72_SEGMENTS,1> available7segMax7219[TOTAL_NUMBER_OF_PIN];
 
 void setup() {
   Serial.begin(SERIAL_BAUD);
+  pinMode(LED_BUILTIN, OUTPUT);
 
   // wait for serial port to connect. Needed for native USB port only
   while (!Serial) {
@@ -119,9 +397,6 @@ void serialEvent() {
       serialStringAvailable = true;
       break;
     }
-    /*if (inChar == '\n' || inChar == '\r') {
-      continue;
-    }*/
     serialString += inChar;
   }
 }
@@ -137,10 +412,11 @@ void loop() {
     // No data to process
     return;
   }
-  serialString.trim();
+  // serialString.trim();
   if(serialString == "")  {
     // No data to process
-    resetSerial();
+   digitalWrite(LED_BUILTIN, HIGH);
+   resetSerial();
     return;
   }
 
@@ -155,15 +431,13 @@ void loop() {
   // Check si les données sont complètes
   if(!serialString.startsWith(":") && !serialString.endsWith(":")) {
     // No thing to do
+    digitalWrite(LED_BUILTIN, HIGH);
     resetSerial();
     return;
   }
   
-  // Suppr le delim : au début de la chaine
-  // TODO remove le if après test
-  if(serialString.startsWith(":")) {
-    serialString.remove(0, 1);
-  }
+  // Suppr le delim ':' au début de la chaine
+  serialString.remove(0, 1);
 
   // :s03050:#    Test servo
   // :d071:#    Test digital
@@ -214,27 +488,38 @@ void loop() {
       short pinCS = serialString.substring(5, 7).toInt();
       short pinCLK = serialString.substring(7, 9).toInt();
       short displayOffset = serialString.substring(9, 11).toInt();
-      short digitLen = serialString.substring(11, 13).toInt();
+      short maxType = serialString.substring(11, 12).toInt();
+      short digitLen = serialString.substring(12, 14).toInt();
       // Use pinDIN as key to allow up to 3 configurations on a single 7seg
       if(arePinsInitialized[pinDIN] == false) {
-        available7segMax7219[pinDIN] = LedController<1,1>(pinDIN, pinCLK, pinCS); // DIN,CLK,CS
+        available7segMax7219[pinDIN] = LedController<MAX72_SEGMENTS,1>(pinDIN, pinCLK, pinCS); // DIN,CLK,CS
         available7segMax7219[pinDIN].setIntensity(8);
         available7segMax7219[pinDIN].clearMatrix();
         arePinsInitialized[pinDIN] = true;
       }
-      String numberToDisplay = serialString.substring(13, 13 + digitLen);
-      for(int i=0; i < digitLen; i++) {
-        available7segMax7219[pinDIN].setChar(0, displayOffset + i, numberToDisplay[i], false);
+      String numberToDisplay = serialString.substring(14, 14 + digitLen);
+      if(maxType == 0) {
+        // :m101011120000287:#
+        for(int i=0; i < digitLen; i++) {
+          available7segMax7219[pinDIN].setChar(0, displayOffset + i, numberToDisplay[i], false);
+        }
+      } else if(maxType == 1) {
+        // :m17171819002013:#
+        numberToDisplay.trim();
+        available7segMax7219[pinDIN].displayOnSegment(0, 0, Matrixdigits[numberToDisplay.toInt()]);
       }
-      serialString.remove(0, 13 + digitLen);
+      serialString.remove(0, 14 + digitLen);
     }
     else {
       // Fallback
-      serialString.remove(0, 6);
+      digitalWrite(LED_BUILTIN, HIGH);
+      resetSerial();
+      return;
     }
 
   }
 
   // End of Data
+  digitalWrite(LED_BUILTIN, LOW);
   resetSerial();
 }

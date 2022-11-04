@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +17,17 @@ namespace GMTHub.Utils
             char[] array = text.ToCharArray();
             Array.Reverse(array);
             return new String(array);
+        }
+
+        public static float ParseFloat(string text)
+        {
+            float value;
+            Single.TryParse(
+                text.Replace(',', '.'),
+                NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture,
+                out value
+            );
+            return value;
         }
     }
 }

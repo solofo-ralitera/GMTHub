@@ -17,6 +17,7 @@ namespace GMTHub
         static void Main(string[] args)
         {
             GMTConfig config = new GMTConfig();
+            Blinker blinker = new Blinker();
             ICom com = new PortCom();
             com.SetConfig(config);
 
@@ -35,6 +36,7 @@ namespace GMTHub
                 Main(args);
                 return;
             }
+            game.InjectBlinker(blinker);
             Task task = com.ProcessAllPorts(game);
             task.Wait();
             Thread.Sleep(1000);

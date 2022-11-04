@@ -44,6 +44,7 @@ namespace GMTHub.Utils
         public bool servo_reverse_rotation = false;
 
         // Common data
+        public bool blink = false;
         public float data_offset = 0f;
         public float data_min_value = 0f;
         public float data_max_value;
@@ -55,6 +56,8 @@ namespace GMTHub.Utils
         public ushort digit_length = 4;
         public bool reverse_digit = false;
         public ushort display_offset = 0;
+        public ushort max_type = 0; // 0 = 7seg, 1 = matrix
+        public string matrix_value_correspondance = "";
 
         // Anlogdisc
         public string discrete_value;
@@ -64,11 +67,21 @@ namespace GMTHub.Utils
             ushort.TryParse(DictUtils.GetString(pinConfigs, "servo_max_range"), out servo_max_range);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "servo_relative_min"), out servo_relative_min);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "servo_relative_max"), out servo_relative_max);
+            ushort.TryParse(DictUtils.GetString(pinConfigs, "din_pin"), out din_pin);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "cs_pin"), out cs_pin);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "clk_pin"), out clk_pin);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "digit_length"), out digit_length);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "display_offset"), out display_offset);
-            
+            bool.TryParse(DictUtils.GetString(pinConfigs, "reverse_digit"), out reverse_digit);
+            ushort.TryParse(DictUtils.GetString(pinConfigs, "max_type"), out max_type);
+            if(max_type == 1)
+            {
+                // Pour affichage matrix: digit 2 max (clé du tableau MatrixNumber dans Arduino)
+                digit_length = 2;
+                display_offset = 0;
+                reverse_digit = false;
+           }
+
             Single.TryParse(DictUtils.GetString(pinConfigs, "servo_step_value"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out servo_step_value);
             Single.TryParse(DictUtils.GetString(pinConfigs, "data_offset"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out data_offset);
             Single.TryParse(DictUtils.GetString(pinConfigs, "data_min_value"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out data_min_value);
@@ -77,10 +90,11 @@ namespace GMTHub.Utils
             output_type = DictUtils.GetString(pinConfigs, "output_type", "");
             data_binding = DictUtils.GetString(pinConfigs, "data_binding", "");
             discrete_value = DictUtils.GetString(pinConfigs, "discrete_value", "");
+            matrix_value_correspondance = DictUtils.GetString(pinConfigs, "matrix_value_correspondance", "");
 
             bool.TryParse(DictUtils.GetString(pinConfigs, "servo_reverse_rotation"), out servo_reverse_rotation);
             bool.TryParse(DictUtils.GetString(pinConfigs, "disabled"), out disabled);
-            bool.TryParse(DictUtils.GetString(pinConfigs, "reverse_digit"), out reverse_digit);
+            bool.TryParse(DictUtils.GetString(pinConfigs, "blink"), out blink);
 
         }
     }
@@ -133,7 +147,7 @@ namespace GMTHub.Utils
                     {
                         byte boardNumber = byte.Parse(item.SectionName.Replace("BOARD_", "").Trim());
                         // boardsNumber.Add(boardNumber);
-                        string name = item.Keys["board_name"] ?? item.SectionName;
+                        string name = (item.Keys["board_name"] ?? item.SectionName).Split(';')[0].Trim();
                         ushort refreshDelay;
                         if(! ushort.TryParse(item.Keys["fps"], out refreshDelay))
                         {
@@ -165,7 +179,8 @@ namespace GMTHub.Utils
                         Dictionary<string, string> pinConfigs = new Dictionary<string, string>();
                         foreach (KeyData key in item.Keys)
                         {
-                            pinConfigs.Add(key.KeyName.Trim(), key.Value.Trim());
+                            // Split ; pour enlever les comments
+                            pinConfigs.Add(key.KeyName.Trim(), key.Value.Split(';')[0].Trim());
                         }
 
                         PinConfig pinConfig = new PinConfig()

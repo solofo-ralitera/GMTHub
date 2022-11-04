@@ -1,4 +1,5 @@
 ﻿using GMTHub.Models;
+using GMTHub.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,5 +13,7 @@ namespace GMTHub.GameProvider
         bool Init();
 
         TelemetryData GetData();
+
+        void InjectBlinker(Blinker blinker);
     }
 }

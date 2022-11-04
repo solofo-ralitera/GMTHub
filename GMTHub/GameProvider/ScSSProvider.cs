@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace GMTHub.GameProvider
@@ -15,6 +16,8 @@ namespace GMTHub.GameProvider
         protected MemoryMappedFileProvider dataProvider;
         protected SCSSdkClient sdk;
         protected SCSTelemetry telemetryData;
+
+        Blinker Blinker;
 
         public ScSSProvider()
         {
@@ -35,6 +38,11 @@ namespace GMTHub.GameProvider
             return true;
         }
 
+        public void InjectBlinker(Blinker blinker)
+        {
+            Blinker = blinker;
+        }
+
         public TelemetryData GetData()
         {
             telemetryData = sdk.Convert(dataProvider.Update());
@@ -43,6 +51,7 @@ namespace GMTHub.GameProvider
             {
                 // if sdk not active we don't need to do something
                 ConsoleLog.Error("The game or the SCS-Telemetry is not running");
+                Thread.Sleep(2000);
                 return new TelemetryData
                 {
                     notfilled = true
@@ -58,11 +67,13 @@ namespace GMTHub.GameProvider
             return new TelemetryData
             {
                 notfilled = false,
+                blinker = Blinker,
+
                 rpm = (ushort)telemetryData.TruckValues_CurrentValues_DashboardValues_RPM,
                 rpm_max = (ushort)telemetryData.TruckValues_ConstantsValues_MotorValues_EngineRpmMax,
-                speed_ms = (ushort)Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value),
-                speed_kph = (ushort)(Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value) * 3.6f),
-                speed_Mph = (ushort)(Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value) * 2.25f),
+                speed_ms = Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value),
+                speed_kph = Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value) * 3.6f,
+                speed_Mph = Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value) * 2.25f,
 
                 gear = (sbyte)telemetryData.TruckValues_CurrentValues_DashboardValues_GearDashboards,
                 odometer = telemetryData.TruckValues_CurrentValues_DashboardValues_Odometer,
