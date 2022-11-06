@@ -21,13 +21,13 @@ namespace GMTHub.Com
     public class TaskParameter
     {
         public PortContainer portContainer;
-        public IGameProvider game;
         public BoardConfig boardConfig;
     }
 
     public class PortCom: ICom
     {
         protected GMTConfig Config;
+        protected Blinker Blinker;
         public List<PortContainer> Ports = new List<PortContainer>();
 
         ~PortCom()
@@ -46,9 +46,19 @@ namespace GMTHub.Com
             });
         }
 
+        public List<PortContainer>  GetPorts()
+        {
+            return Ports;
+        }
+
         public void SetConfig(GMTConfig config)
         {
             Config = config;
+        }
+
+        public void SetBlinker(Blinker blinker)
+        {
+            Blinker = blinker;
         }
 
         protected SerialPort InitSerialPort(string portName)
@@ -116,25 +126,23 @@ namespace GMTHub.Com
                 tasks.Add(Task.Factory.StartNew((Object obj) =>
                 {
                     var data = (TaskParameter)obj;
-                    ProcessPort(data.portContainer, data.game, data.boardConfig);
-                }, new TaskParameter() { portContainer = portContainer,  game = game, boardConfig = boardConfig }));
+                    ProcessPort(data.portContainer, data.boardConfig);
+                }, new TaskParameter() { portContainer = portContainer,  boardConfig = boardConfig }));
 
             });
             await Task.WhenAll(tasks);
         }
 
-        public void ProcessPort(PortContainer portContainer, IGameProvider game, BoardConfig boardConfig)
+        public void ProcessPort(PortContainer portContainer, BoardConfig boardConfig)
         {
-            TelemetryData data;
             while (true)
             {
-                data = game.GetData();
-                if (data.notfilled)
+                if (Blinker.GameData.notfilled)
                 {
                     Thread.Sleep(boardConfig.refreshDelay);
                     continue;
                 }
-                SendData(portContainer, data, boardConfig);
+                SendData(portContainer, boardConfig);
                 Thread.Sleep(boardConfig.refreshDelay);
             }
         }
@@ -166,12 +174,11 @@ namespace GMTHub.Com
             }
         }
 
-        public void SendData(PortContainer portContainer, TelemetryData data, BoardConfig boardConfig)
+        public void SendData(PortContainer portContainer, BoardConfig boardConfig)
         {
-            // TODO send async each board
             try
             {
-                string cmd = data.ProcessOutput(boardConfig);
+                string cmd = Blinker.BoardData[portContainer.number];
                 SendMessage(portContainer.port, $":{cmd}:");
             }
             catch (Exception ex)

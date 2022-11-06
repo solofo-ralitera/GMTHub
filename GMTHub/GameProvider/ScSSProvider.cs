@@ -38,7 +38,7 @@ namespace GMTHub.GameProvider
             return true;
         }
 
-        public void InjectBlinker(Blinker blinker)
+        public void SetBlinker(Blinker blinker)
         {
             Blinker = blinker;
         }
@@ -88,7 +88,7 @@ namespace GMTHub.GameProvider
                 adblue = telemetryData.TruckValues_CurrentValues_DashboardValues_AdBlue,
                 adblue_capacity = telemetryData.TruckValues_ConstantsValues_CapacityValues_AdBlue,
                 adblue_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AdBlue,
-                adblue_pct = (byte) (telemetryData.TruckValues_CurrentValues_DashboardValues_AdBlue * 100 / telemetryData.TruckValues_ConstantsValues_CapacityValues_AdBlue),
+                adblue_pct = (ushort) (telemetryData.TruckValues_CurrentValues_DashboardValues_AdBlue * 100 / telemetryData.TruckValues_ConstantsValues_CapacityValues_AdBlue),
 
                 airPressure = telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_AirPressure,
                 airPressure_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AirPressure 
@@ -98,11 +98,11 @@ namespace GMTHub.GameProvider
                 batteryVoltage_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_BatteryVoltage,
 
                 fuel = telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_Amount,
-                fuel_averageConsumption = telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_AverageConsumption,
+                fuel_averageConsumption = telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_AverageConsumption * 100,
                 fuel_range = telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_Range,
                 fuel_capacity = telemetryData.TruckValues_ConstantsValues_CapacityValues_Fuel,
                 fuel_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_FuelW,
-                fuel_pct = (byte) (telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_Amount * 100 / telemetryData.TruckValues_ConstantsValues_CapacityValues_Fuel),
+                fuel_pct = (ushort) (telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_Amount * 100 / telemetryData.TruckValues_ConstantsValues_CapacityValues_Fuel),
 
                 warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_WaterTemperature
                     || telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AdBlue
@@ -116,17 +116,40 @@ namespace GMTHub.GameProvider
                 engine_on = telemetryData.TruckValues_CurrentValues_EngineEnabled,
 
                 parkingBrake = telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_ParkingBrake,
+                motorBrake = telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_MotorBrake,
+                wipers = telemetryData.TruckValues_CurrentValues_DashboardValues_Wipers,
 
                 blinkerLeft = telemetryData.TruckValues_CurrentValues_LightsValues_BlinkerLeftOn,
                 blinkerRight = telemetryData.TruckValues_CurrentValues_LightsValues_BlinkerRightOn,
                 hazardLight = telemetryData.TruckValues_CurrentValues_LightsValues_HazardWarningLights,
+                backLight = telemetryData.TruckValues_CurrentValues_LightsValues_DashboardBacklight,
 
-                speed_limit = telemetryData.NavigationValues_SpeedLimit,
+                speedLimit_ms = telemetryData.NavigationValues_SpeedLimit,
+                speedLimit_kph = telemetryData.NavigationValues_SpeedLimit * 3.6f,
+                speedLimit_Mph = telemetryData.NavigationValues_SpeedLimit * 2.25f,
+                speedLimit_warning = telemetryData.NavigationValues_SpeedLimit > 0 && telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value > telemetryData.NavigationValues_SpeedLimit,
 
+                cargoMass = telemetryData.JobValues_CargoValues_Mass,
+                cargoMass_ton = telemetryData.JobValues_CargoValues_Mass / 1000,
+                distance = telemetryData.NavigationValues_NavigationDistance,
+
+                beaconLight = telemetryData.TruckValues_CurrentValues_LightsValues_Beacon,
+                beamHighLight = telemetryData.TruckValues_CurrentValues_LightsValues_BeamHigh,
+                beamLowLight = telemetryData.TruckValues_CurrentValues_LightsValues_BeamLow,
+                brakeLight = telemetryData.TruckValues_CurrentValues_LightsValues_Brake,
+                cruiseControl_on = telemetryData.TruckValues_CurrentValues_DashboardValues_CruiseControl,
+                cruiseControl_value = telemetryData.TruckValues_CurrentValues_DashboardValues_CruiseControlSpeed_Value,
+                differentialLock = telemetryData.TruckValues_CurrentValues_DifferentialLock,
+                parkingLight = telemetryData.TruckValues_CurrentValues_LightsValues_Parking,
+                reverseLight = telemetryData.TruckValues_CurrentValues_LightsValues_Reverse,
+                auxFront = telemetryData.TruckValues_CurrentValues_LightsValues_AuxFront,
+                auxRoof = telemetryData.TruckValues_CurrentValues_LightsValues_AuxRoof,
                 // TODO calculated warning
                 // si frein parkin activé et accelerateur et vitesse != N
                 // Si differential lock et vitesse elevé
                 // Si depassement limitation vitesse
+
+
 
             };
         }

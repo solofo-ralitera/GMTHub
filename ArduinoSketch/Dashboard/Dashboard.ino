@@ -377,11 +377,15 @@ LedController<MAX72_SEGMENTS,1> available7segMax7219[TOTAL_NUMBER_OF_PIN];
 void setup() {
   Serial.begin(SERIAL_BAUD);
   pinMode(LED_BUILTIN, OUTPUT);
-
+  /*byte i;
+  for(i = 0; i < TOTAL_NUMBER_OF_PIN; i++) {
+    pinMode(i, OUTPUT);
+    digitalWrite(i, LOW);
+  }*/
   // wait for serial port to connect. Needed for native USB port only
   while (!Serial) {
     ;
-  }
+  } 
 }
 
 /*
@@ -499,14 +503,46 @@ void loop() {
       }
       String numberToDisplay = serialString.substring(14, 14 + digitLen);
       if(maxType == 0) {
+        // 7 Seg
         // :m101011120000287:#
+        // :m101011120000587.12:#
+        byte currDigitPosition = 0;
         for(int i=0; i < digitLen; i++) {
-          available7segMax7219[pinDIN].setChar(0, displayOffset + i, numberToDisplay[i], false);
+            bool hasDP = i < digitLen - 1 && (numberToDisplay[i+ 1] == '.' || numberToDisplay[i+ 1] == ',');
+            if(numberToDisplay[i] == '.' || numberToDisplay[i] == ',') {
+              // Ignore le decimal point car déjà pris en compte par le chiffre précédent
+              continue;
+            }
+            available7segMax7219[pinDIN].setDigit(
+              0, 
+              displayOffset + currDigitPosition, 
+              numberToDisplay[i], 
+              hasDP
+            );
+            currDigitPosition++;
         }
       } else if(maxType == 1) {
+        // Matrix 8x8
         // :m17171819002013:#
         numberToDisplay.trim();
+        if(numberToDisplay == "") numberToDisplay = "29";
         available7segMax7219[pinDIN].displayOnSegment(0, 0, Matrixdigits[numberToDisplay.toInt()]);
+      } else if(maxType == 2) {
+        // Max72xx as digital pin extension
+        // exemple start at 143
+        // :m1717181900224143146110000072216248255:#
+        if(digitLen == 24)  {
+          available7segMax7219[pinDIN].displayOnSegment(0, 0, {
+            (byte)numberToDisplay.substring(0, 3).toInt(),
+            (byte)numberToDisplay.substring(3, 6).toInt(),
+            (byte)numberToDisplay.substring(6, 9).toInt(),
+            (byte)numberToDisplay.substring(9, 12).toInt(),
+            (byte)numberToDisplay.substring(12, 15).toInt(),
+            (byte)numberToDisplay.substring(15, 18).toInt(),
+            (byte)numberToDisplay.substring(18, 21).toInt(),
+            (byte)numberToDisplay.substring(21, 24).toInt()
+          });
+        }        
       }
       serialString.remove(0, 14 + digitLen);
     }

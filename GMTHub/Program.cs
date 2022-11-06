@@ -17,16 +17,18 @@ namespace GMTHub
         static void Main(string[] args)
         {
             GMTConfig config = new GMTConfig();
-            Blinker blinker = new Blinker();
-            ICom com = new PortCom();
-            com.SetConfig(config);
-
             IGameProvider game = new ScSSProvider();
             if (!game.Init())
             {
                 ConsoleLog.Error("Game init error");
                 return;
             }
+
+            ICom com = new PortCom();
+            com.SetConfig(config);
+
+            Blinker blinker = new Blinker(game, com, config);
+
 
             Console.WriteLine("GMTHub started");
             if(!com.Scan())
@@ -36,7 +38,9 @@ namespace GMTHub
                 Main(args);
                 return;
             }
-            game.InjectBlinker(blinker);
+            
+            com.SetBlinker(blinker);
+            game.SetBlinker(blinker);
             Task task = com.ProcessAllPorts(game);
             task.Wait();
             Thread.Sleep(1000);

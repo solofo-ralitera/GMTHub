@@ -8,6 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+// https://etcars.readthedocs.io/en/master/thedata.html
+
 namespace GMTHub.Models
 {
     public class TelemetryData
@@ -17,49 +19,113 @@ namespace GMTHub.Models
         public ushort rpm_max { get; internal set; }
         public float speed_ms { get; internal set; }
         public float speed_kph { get; internal set; }
-        public float speed_Mph { get; internal set; } // Miles per hour
+        public float speed_Mph { get; internal set; }
 
         public sbyte gear { get; internal set; }
 
         public bool electric_on { get; internal set; }
         public bool engine_on { get; internal set; }
+        public bool cruiseControl_on { get; internal set; }
+        public float cruiseControl_value { get; internal set; }
+        public bool differentialLock { get; internal set; }
 
         public bool parkingBrake { get; internal set; }
-
+        public bool motorBrake { get; internal set; }
+        public bool wipers { get; internal set; }
         public bool blinkerLeft { get; internal set; }
         public bool blinkerRight { get; internal set; }
         public bool hazardLight { get; internal set; }
 
+        /// <summary>
+        /// Intensity of the dashboard backlight as factor. <0,1>
+        /// </summary>
+        public float backLight { get; internal set; }
+        public bool parkingLight { get; internal set; }
+        public bool beamLowLight { get; internal set; }
+        public bool beamHighLight { get; internal set; }
+        public bool beaconLight { get; internal set; }
+        public bool brakeLight { get; internal set; }
+        public bool reverseLight { get; internal set; }
+
+        /// <summary>
+        /// 0: Off, 1: Dimmed, 2: Full
+        /// </summary>
+        public uint auxFront { get; internal set; }
+
+        /// <summary>
+        /// 0: Off, 1: Dimmed, 2: Full
+        /// </summary>
+        public uint auxRoof { get; internal set; }
+
         public float odometer { get; internal set; }
         public bool warning { get; internal set; }
 
+        /// <summary>
+        /// Amount of fuel currently in the tank
+        /// </summary>
         public float fuel { get; internal set; }
+        /// <summary>
+        ///  Average consumption of the fuel in litres/100km
+        /// </summary>
         public float fuel_averageConsumption { get; internal set; }
-        public float fuel_capacity { get; internal set; } // Type à confirmer
-        public float fuel_range { get; internal set; } // Type à confirmer
-        public byte fuel_pct { get; internal set; } // Type à confirmer
+        public float fuel_capacity { get; internal set; }
+
+        /// <summary>
+        /// Estimated range of the current truck with current amount of fuel in km.
+        /// </summary>
+        public float fuel_range { get; internal set; }
+
+        public ushort fuel_pct { get; internal set; }
         public bool fuel_warning { get; internal set; }
 
+        /// <summary>
+        /// Pressure of the oil in psi(pounds per square inch).
+        /// </summary>
         public float oilPressure { get; internal set; }
         public bool oilPressure_warning { get; internal set; }
-
+        /// <summary>
+        /// The loose approximation of the temperature of the oil in degrees celsius.
+        /// </summary>
         public float oilTemperature { get; internal set; }
 
         public float waterTemperature { get; internal set; }
         public bool waterTemperature_warning { get; internal set; }
 
+        /// <summary>
+        /// Amount of adBlue in litres. NOTE: This value will always be 0 in American Truck Simulator(ats).
+        /// </summary>
         public float adblue { get; internal set; }
         public float adblue_capacity { get; internal set; }
-        public byte adblue_pct { get; internal set; }
+        public ushort adblue_pct { get; internal set; }
         public bool adblue_warning { get; internal set; }
-        
+
+        /// <summary>
+        ///  Pressure in the brake air tank in psi(pounds per square inch).
+        /// </summary>
         public float airPressure { get; internal set; }
         public bool airPressure_warning { get; internal set; }
          
         public float batteryVoltage { get; internal set; }
         public bool batteryVoltage_warning { get; internal set; }
 
-        public float speed_limit { get; internal set; }
+        public float speedLimit_ms { get; internal set; }
+        public float speedLimit_kph { get; internal set; }
+        public float speedLimit_Mph { get; internal set; }
+        public bool speedLimit_warning { get; internal set; }
+
+        /// <summary>
+        /// Mass of the cargo in kilograms
+        /// </summary>
+        public float cargoMass { get; internal set; }
+        public float cargoMass_ton { get; internal set; }
+
+        /// <summary>
+        /// Navigation distance remaining until the next waypoint is hit OR distance remaining until the company of the delivery is reached. 
+        /// Represented in meters. 
+        /// NOTE: When electronics are disabled or when route advisor is completely disabled, this value will ALWAYS be 0.
+        /// </summary>
+        public float distance { get; internal set; }
+
 
         public Blinker blinker;
         public string ProcessOutput(BoardConfig boardConfig)
@@ -109,17 +175,42 @@ namespace GMTHub.Models
             }
         }
 
+        public bool BlinkIf(PinConfig pinConfig)
+        {
+            if (String.IsNullOrEmpty(pinConfig.blink_if))
+            {
+                return false;
+            }
+            // TODO mettre dans une fonction
+            // Evaluate range
+            if(pinConfig.blink_if.IndexOf('|') > 0)
+            {
+                string[] range = pinConfig.blink_if.Split('|');
+                float fValue = StringUtils.ParseFloat((this.GetType().GetProperty(range[0]).GetValue(this, null)).ToString());
+                float r1 = StringUtils.ParseFloat((range[1]).ToString());
+                float r2 = StringUtils.ParseFloat((range[2]).ToString());
+                return fValue >= r1 && fValue <= r2; // TODO evaluate range
+            } else
+            {
+                var value = this.GetType().GetProperty(pinConfig.blink_if).GetValue(this, null);
+                return (bool)value;
+            }
+        }
+
+        // Blink for 
         public int Blink(PinConfig pinConfig, int i)
         {
-            if (!pinConfig.blink) return i;
-            if (!blinker.TimerStatus) return 0;
+            if (pinConfig.blink == 0) return i;
+            if (!BlinkIf(pinConfig)) return i;
+            if (!blinker.GetStatus(pinConfig.blink)) return 0;
             return i;
         }
 
         public string Blink(PinConfig pinConfig, string val)
         {
-            if (!pinConfig.blink) return val;
-            if (!blinker.TimerStatus) return "";
+            if (pinConfig.blink == 0) return val;
+            if (!BlinkIf(pinConfig)) return val;
+            if (!blinker.GetStatus(pinConfig.blink)) return "";
             return val;
         }
 
@@ -200,13 +291,19 @@ namespace GMTHub.Models
         public string ProcessMax7seg(PinConfig pinConfig)
         {
             string value = this.GetType().GetProperty(pinConfig.data_binding).GetValue(this, null).ToString();
-            if(value.Length > pinConfig.digit_length)
+            ushort digitLength = pinConfig.digit_length;
+            // Pour le 7 seg: si value contient un decimal point: rajoute 1 à digit_length car le DP ny prend pas la place de un digit sur le 7seg
+            if (pinConfig.max_type == 0 && (value.IndexOf('.') > 0 || value.IndexOf(',') > 0))
             {
-                value = Blink(pinConfig, value.Substring(0, pinConfig.digit_length));
+                digitLength++;
+            }
+            if(value.Length > digitLength)
+            {
+                value = value.Substring(0, digitLength);
             }
             if (pinConfig.reverse_digit)
             {
-                value = Blink(pinConfig, StringUtils.Reverse(value));
+                value = StringUtils.Reverse(value);
             }
             // Matrix display
             if(pinConfig.max_type == 1)
@@ -231,7 +328,7 @@ namespace GMTHub.Models
                 iValue = Math.Min(iValue, 29); // 29 correspond au caractères vide du Matrix 
                 value = iValue.ToString();
             }
-            return $"m{pinConfig.pin.ToString("00")}{pinConfig.din_pin.ToString("00")}{pinConfig.cs_pin.ToString("00")}{pinConfig.clk_pin.ToString("00")}{pinConfig.display_offset.ToString("00")}{pinConfig.max_type}{pinConfig.digit_length.ToString("00")}{value.PadLeft(pinConfig.digit_length, ' ')}";
+            return $"m{pinConfig.pin.ToString("00")}{pinConfig.din_pin.ToString("00")}{pinConfig.cs_pin.ToString("00")}{pinConfig.clk_pin.ToString("00")}{pinConfig.display_offset.ToString("00")}{pinConfig.max_type}{digitLength.ToString("00")}{Blink(pinConfig, value).PadLeft(digitLength, ' ')}";
         }
         
         public string ProcessAnalogDisc(PinConfig pinConfig)

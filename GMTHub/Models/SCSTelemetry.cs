@@ -10,6 +10,8 @@ namespace GMTHub.Models
 {
     public class SCSTelemetry
     {
+        // https://etcars.readthedocs.io/en/master/thedata.html
+
         public bool SdkActive { get; internal set; }
         public bool Paused { get; internal set; }
         public ulong Timestamp { get; internal set; }

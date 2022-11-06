@@ -11,11 +11,13 @@ namespace GMTHub.Com
 {
     public interface ICom
     {
+        List<PortContainer> GetPorts();
         bool Scan();
 
         void SetConfig(GMTConfig config);
 
-        void SendData(PortContainer portContainer, TelemetryData data, BoardConfig boardConfig);
+        void SetBlinker(Blinker blinker);
+        void SendData(PortContainer portContainer, BoardConfig boardConfig);
 
         Task ProcessAllPorts(IGameProvider game);
     }

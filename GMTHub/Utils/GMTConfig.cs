@@ -44,7 +44,8 @@ namespace GMTHub.Utils
         public bool servo_reverse_rotation = false;
 
         // Common data
-        public bool blink = false;
+        public ushort blink = 0;
+        public string blink_if = "";
         public float data_offset = 0f;
         public float data_min_value = 0f;
         public float data_max_value;
@@ -81,12 +82,14 @@ namespace GMTHub.Utils
                 display_offset = 0;
                 reverse_digit = false;
            }
-
+            ushort.TryParse(DictUtils.GetString(pinConfigs, "blink"), out blink);
+            
             Single.TryParse(DictUtils.GetString(pinConfigs, "servo_step_value"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out servo_step_value);
             Single.TryParse(DictUtils.GetString(pinConfigs, "data_offset"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out data_offset);
             Single.TryParse(DictUtils.GetString(pinConfigs, "data_min_value"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out data_min_value);
             Single.TryParse(DictUtils.GetString(pinConfigs, "data_max_value"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out data_max_value);
 
+            blink_if = DictUtils.GetString(pinConfigs, "blink_if", "");
             output_type = DictUtils.GetString(pinConfigs, "output_type", "");
             data_binding = DictUtils.GetString(pinConfigs, "data_binding", "");
             discrete_value = DictUtils.GetString(pinConfigs, "discrete_value", "");
@@ -94,7 +97,6 @@ namespace GMTHub.Utils
 
             bool.TryParse(DictUtils.GetString(pinConfigs, "servo_reverse_rotation"), out servo_reverse_rotation);
             bool.TryParse(DictUtils.GetString(pinConfigs, "disabled"), out disabled);
-            bool.TryParse(DictUtils.GetString(pinConfigs, "blink"), out blink);
 
         }
     }
