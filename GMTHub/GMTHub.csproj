@@ -61,6 +61,7 @@
     <Compile Include="Utils\ConsoleLog.cs" />
     <Compile Include="Utils\DictUtils.cs" />
     <Compile Include="Utils\GMTConfig.cs" />
+    <Compile Include="Utils\ObjectUtils.cs" />
     <Compile Include="Utils\RangeUtils.cs" />
     <Compile Include="Utils\StringUtils.cs" />
   </ItemGroup>

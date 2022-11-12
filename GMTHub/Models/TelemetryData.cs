@@ -2,10 +2,12 @@
 using GMTHub.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 // https://etcars.readthedocs.io/en/master/thedata.html
@@ -18,14 +20,17 @@ namespace GMTHub.Models
         public ushort rpm { get; internal set; }
         public ushort rpm_max { get; internal set; }
         public float speed_ms { get; internal set; }
-        public float speed_kph { get; internal set; }
-        public float speed_Mph { get; internal set; }
+        public int speed_kph { get; internal set; }
+        public int speed_Mph { get; internal set; }
 
         public sbyte gear { get; internal set; }
 
         public bool electric_on { get; internal set; }
         public bool engine_on { get; internal set; }
         public bool cruiseControl_on { get; internal set; }
+        /// <summary>
+        /// Speed selected for cruise control. 0 if disabled. (m/s)
+        /// </summary>
         public float cruiseControl_value { get; internal set; }
         public bool differentialLock { get; internal set; }
 
@@ -128,24 +133,35 @@ namespace GMTHub.Models
 
 
         public Blinker blinker;
+        public static Dictionary<string, string> CacheData = new Dictionary<string, string>();
         public string ProcessOutput(BoardConfig boardConfig)
         {
             string cmd = "";
-            boardConfig.pinConfig.ForEach(pinConfig =>
+            for (int i = 0; i < boardConfig.pinConfig.Count; i++)
             {
-                if (pinConfig.disabled) return;
+                var pinConfig = boardConfig.pinConfig[i];
+                if (pinConfig.disabled) continue;
+                if (Blinker.IsCached(pinConfig)) continue;                
                 if (String.IsNullOrEmpty(pinConfig.output_type))
                 {
                     ConsoleLog.Error($"Process error on pin {pinConfig.pin}: output_type is not defined");
-                    return;
+                    continue;
                 }
                 if (String.IsNullOrEmpty(pinConfig.data_binding))
                 {
                     ConsoleLog.Error($"Process error on pin {pinConfig.pin}: data_binding is not defined");
-                    return;
+                    continue;
                 }
+                string cacheKey = $"{boardConfig.boardNumber}-{pinConfig.pin}";
                 cmd += ProcessPin(pinConfig);
-            });
+                /*string stringData = ProcessPin(pinConfig);
+                if(CacheData.ContainsKey(cacheKey) && CacheData[cacheKey] == stringData)
+                {
+                    continue;
+                }
+                CacheData[cacheKey] = stringData;
+                cmd += stringData;*/
+            }
             return cmd;
         }
 
@@ -164,6 +180,8 @@ namespace GMTHub.Models
                         return ProcessMax7seg(pinConfig);
                     case "analogdisc":
                         return ProcessAnalogDisc(pinConfig);
+                    case "lcd":
+                        return ProcessLcd(pinConfig);
                     default:
                         return "";
                 }
@@ -179,7 +197,7 @@ namespace GMTHub.Models
         {
             if (String.IsNullOrEmpty(pinConfig.blink_if))
             {
-                return false;
+                return true;
             }
             // TODO mettre dans une fonction
             // Evaluate range
@@ -240,12 +258,13 @@ namespace GMTHub.Models
             return $"s{pinConfig.pin.ToString("00")}{(angle).ToString("000")}";
         }
 
-        public string ProcessDigital(PinConfig pinConfig)
+        public string ProcessDigital(PinConfig pinConfig, bool returnStringValue = false)
         {
             var value = this.GetType().GetProperty(pinConfig.data_binding).GetValue(this, null);
             if(value is bool)
             {
                 bool bValue = (bool)value;
+                if (returnStringValue) return bValue ? "1" : "0";
                 return $"d{pinConfig.pin.ToString("00")}{Blink(pinConfig, (bValue ? 1 : 0))}";
             }
             float fValue = StringUtils.ParseFloat(value.ToString().ToString());
@@ -253,8 +272,10 @@ namespace GMTHub.Models
             float maxValue = pinConfig.data_max_value > 0 ? pinConfig.data_max_value : fValue;
             if (fValue >= pinConfig.data_min_value && fValue <= pinConfig.data_max_value)
             {
+                if (returnStringValue) return Blink(pinConfig, 1).ToString();
                 return $"d{pinConfig.pin.ToString("00")}{Blink(pinConfig, 1)}";
             }
+            if (returnStringValue) return "0";
             return $"d{pinConfig.pin.ToString("00")}0";
         }
 
@@ -285,15 +306,23 @@ namespace GMTHub.Models
         }
 
         /**
-         * maxType 1 : 7seg
-         * maxType 2 : Matrix
+         * maxType : 7seg
+         * maxType : matrix
+         * maxType : extension
          * */
         public string ProcessMax7seg(PinConfig pinConfig)
         {
+            // Les pins extension
+            if (pinConfig.max_type == "extension")
+            {
+                return ProcessMaxExtension(pinConfig);
+            }
+            // 7seg et Matrix
             string value = this.GetType().GetProperty(pinConfig.data_binding).GetValue(this, null).ToString();
             ushort digitLength = pinConfig.digit_length;
+            value = value.Replace(',', '.');
             // Pour le 7 seg: si value contient un decimal point: rajoute 1 à digit_length car le DP ny prend pas la place de un digit sur le 7seg
-            if (pinConfig.max_type == 0 && (value.IndexOf('.') > 0 || value.IndexOf(',') > 0))
+            if (pinConfig.max_type == "7seg" && value.IndexOf('.') > 0)
             {
                 digitLength++;
             }
@@ -306,7 +335,7 @@ namespace GMTHub.Models
                 value = StringUtils.Reverse(value);
             }
             // Matrix display
-            if(pinConfig.max_type == 1)
+            if(pinConfig.max_type == "matrix")
             {
                 // transform la valeur en clé si necessaire
                 int iValue;
@@ -328,9 +357,28 @@ namespace GMTHub.Models
                 iValue = Math.Min(iValue, 29); // 29 correspond au caractères vide du Matrix 
                 value = iValue.ToString();
             }
-            return $"m{pinConfig.pin.ToString("00")}{pinConfig.din_pin.ToString("00")}{pinConfig.cs_pin.ToString("00")}{pinConfig.clk_pin.ToString("00")}{pinConfig.display_offset.ToString("00")}{pinConfig.max_type}{digitLength.ToString("00")}{Blink(pinConfig, value).PadLeft(digitLength, ' ')}";
+            int maxType = pinConfig.max_type == "7seg" ? 0 : (pinConfig.max_type == "matrix" ? 1 : 2);
+            return $"m{pinConfig.pin.ToString("00")}{pinConfig.din_pin.ToString("00")}{pinConfig.cs_pin.ToString("00")}{pinConfig.clk_pin.ToString("00")}{pinConfig.display_offset.ToString("00")}{maxType}{digitLength.ToString("00")}{Blink(pinConfig, value).PadLeft(digitLength, ' ')}";
         }
-        
+
+        public string ProcessMaxExtension(PinConfig pinConfig)
+        {
+            StringBuilder result = new StringBuilder("".PadLeft(64, '0')); // Crée la chaine représentant les binaires à afficher (64 au total)
+            pinConfig.pinExtensions.ForEach(pinExtension =>
+            {
+                if(pinConfig.pin < 64) result[pinExtension.pin - 1] = ProcessDigital(pinExtension, true)[0];
+            });
+            string resultString = result.ToString();
+            string resultByte = "";
+            // Convert string to byte
+            for (int i = 0; i < 64; i += 8)
+            {
+                resultByte += Convert.ToByte(resultString.Substring(i, 8), 2).ToString().PadLeft(3, '0');
+            }
+            return $"m{pinConfig.pin.ToString("00")}{pinConfig.din_pin.ToString("00")}{pinConfig.cs_pin.ToString("00")}{pinConfig.clk_pin.ToString("00")}{pinConfig.display_offset.ToString("00")}224{resultByte}";
+        }
+
+
         public string ProcessAnalogDisc(PinConfig pinConfig)
         {
             if (String.IsNullOrEmpty(pinConfig.discrete_value))
@@ -354,6 +402,34 @@ namespace GMTHub.Models
                 }
             }
             return $"a{pinConfig.pin.ToString("00")}000";
+        }
+
+        /// <summary>
+        /// Format data binding: [data1:length]static char[data2:length]...
+        /// </summary>
+        /// <param name="pinConfig"></param>
+        /// <returns></returns>
+        public string ProcessLcd(PinConfig pinConfig)
+        {
+
+            string templateTxt = pinConfig.data_binding;
+            string pattern = @"\[([a-z0-9_|]{1,})\]";
+            try
+            {
+                foreach (Match match in Regex.Matches(templateTxt, pattern,RegexOptions.IgnoreCase))
+                {
+                    string[] field = match.Groups[1].Value.Split('|');
+                    int length = field.Count() > 0 ? Convert.ToUInt16(field[1]) : 0;
+                    string fieldValue = this.GetType().GetProperty(field[0]).GetValue(this, null).ToString().Trim().PadLeft(length, ' ').Substring(0, length);
+                    templateTxt = templateTxt.Replace(match.Groups[0].Value, fieldValue);
+                }
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // Do Nothing: no match
+                return "";
+            }
+            return $"l{pinConfig.pin.ToString("00")}{templateTxt.Length.ToString("000")}{templateTxt}";
         }
     }
 }

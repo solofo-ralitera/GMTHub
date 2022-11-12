@@ -65,7 +65,7 @@ namespace GMTHub.Com
         {
             SerialPort sp = new SerialPort();
             sp.PortName = portName;
-            sp.BaudRate = 9600; // Default on Arduino
+            sp.BaudRate = 9600; //  Default on Arduino
             sp.ReadTimeout = 1000;
             sp.WriteTimeout = 1000;
             return sp;
@@ -178,8 +178,14 @@ namespace GMTHub.Com
         {
             try
             {
-                string cmd = Blinker.BoardData[portContainer.number];
-                SendMessage(portContainer.port, $":{cmd}:");
+                if(Blinker.BoardData.ContainsKey(portContainer.number))
+                {
+                    if(!String.IsNullOrEmpty(Blinker.BoardData[portContainer.number].data))
+                    {
+                        SendMessage(portContainer.port, $":{Blinker.BoardData[portContainer.number].data}:");
+                    }
+                    Blinker.BoardData[portContainer.number].consumed = true;
+                }
             }
             catch (Exception ex)
             {

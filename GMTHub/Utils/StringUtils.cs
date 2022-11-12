@@ -29,5 +29,11 @@ namespace GMTHub.Utils
             );
             return value;
         }
+
+        public static string[] SplitSize(string str, int n)
+        {
+            return Enumerable.Range(0, str.Length / n)
+                            .Select(i => str.Substring(i * n, n)).ToArray();
+        }
     }
 }

@@ -12,6 +12,11 @@ using System.Timers;
 
 namespace GMTHub.Utils
 {
+    public class SharedBoardData
+    {
+        public bool consumed = false;
+        public string data = "";
+    }
     /// <summary>
     /// Mangage all shared timer, including refreshing game data
     /// </summary>
@@ -26,7 +31,7 @@ namespace GMTHub.Utils
         public System.Timers.Timer BlinkTimer_3;
         public bool TimerStatus_3 = true;
 
-        public Dictionary<byte, string> BoardData = new Dictionary<byte, string>();
+        public Dictionary<byte, SharedBoardData> BoardData = new Dictionary<byte, SharedBoardData>();
 
         protected GMTConfig Config;
         protected ICom Com;
@@ -95,17 +100,32 @@ namespace GMTHub.Utils
             }
         }
 
+        // Contient le timestamp en millis de la dernière date de data envoyé
+        public static Dictionary<byte, Stopwatch> PinCache = new Dictionary<byte, Stopwatch>();
+        public static bool IsCached(PinConfig pinConfig)
+        {
+            if (pinConfig.cache == 0) return false;
+            if (!PinCache.ContainsKey(pinConfig.pin))
+            {
+                PinCache[pinConfig.pin] = System.Diagnostics.Stopwatch.StartNew();
+            }
+            if (pinConfig.cache < PinCache[pinConfig.pin].ElapsedMilliseconds)
+            {
+                PinCache[pinConfig.pin].Restart();
+                return false;
+            }
+            return true;
+        }
+
         public void PullData()
         {
             while(true)
             {
                 try
                 {
-                    // Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
                     GameData = Game.GetData();
                     if (GameData.notfilled)
                     {
-                        // watch.Stop();
                         Thread.Sleep(1000);
                         continue;
                     }
@@ -113,10 +133,19 @@ namespace GMTHub.Utils
                     Com.GetPorts().ForEach((PortContainer portContainer) =>
                     {
                         BoardConfig boardConfig = Config.GetBoardConfig(portContainer.number);
-                        BoardData[portContainer.number] = GameData.ProcessOutput(boardConfig);
+                        if(BoardData.ContainsKey(portContainer.number) && BoardData[portContainer.number].consumed == false)
+                        {
+                            // Raf tant que le dernier message n'a pas été consomé
+                            return;
+                        }
+                        BoardData[portContainer.number] = new SharedBoardData()
+                        {
+                            consumed = false,
+                            data = GameData.ProcessOutput(boardConfig)
+                        };
                     });
-                    // watch.Stop();
                     Thread.Sleep(16); // Refrech ~ 60fps
+                    // Task.Delay(16);
                 }
                 catch (Exception ex)
                 {

@@ -51,7 +51,7 @@ namespace GMTHub.GameProvider
             {
                 // if sdk not active we don't need to do something
                 ConsoleLog.Error("The game or the SCS-Telemetry is not running");
-                Thread.Sleep(2000);
+                Task.Delay(2000);
                 return new TelemetryData
                 {
                     notfilled = true
@@ -72,8 +72,8 @@ namespace GMTHub.GameProvider
                 rpm = (ushort)telemetryData.TruckValues_CurrentValues_DashboardValues_RPM,
                 rpm_max = (ushort)telemetryData.TruckValues_ConstantsValues_MotorValues_EngineRpmMax,
                 speed_ms = Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value),
-                speed_kph = Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value) * 3.6f,
-                speed_Mph = Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value) * 2.25f,
+                speed_kph = (int) (Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value) * 3.6f),
+                speed_Mph = (int) (Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value) * 2.25f),
 
                 gear = (sbyte)telemetryData.TruckValues_CurrentValues_DashboardValues_GearDashboards,
                 odometer = telemetryData.TruckValues_CurrentValues_DashboardValues_Odometer,

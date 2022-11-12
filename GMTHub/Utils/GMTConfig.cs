@@ -15,7 +15,8 @@ namespace GMTHub.Utils
     public class BoardConfig
     {
         public string name;
-        public ushort refreshDelay;
+        public byte boardNumber;
+        public int refreshDelay;
         public List<PinConfig> pinConfig;
     }
 
@@ -23,14 +24,14 @@ namespace GMTHub.Utils
     {
         public byte pin;
 
-        /**
-         * known types:
-         *  servo
-         *  digital
-         *  analog
-         *  max7seg
-         *  analogdisc
-         * */
+        /// <summary>
+        /// known types:
+        ///     servo
+        ///     digital
+        ///     analog
+        ///     max7seg
+        ///     analogdisc
+        /// </summary>
         public string output_type;
 
         public bool disabled = false;
@@ -49,6 +50,7 @@ namespace GMTHub.Utils
         public float data_offset = 0f;
         public float data_min_value = 0f;
         public float data_max_value;
+        public long cache;
 
         // 7Seg
         public ushort din_pin = 16;
@@ -57,11 +59,18 @@ namespace GMTHub.Utils
         public ushort digit_length = 4;
         public bool reverse_digit = false;
         public ushort display_offset = 0;
-        public ushort max_type = 0; // 0 = 7seg, 1 = matrix
+        /// <summary>
+        /// 7seg
+        /// matrix
+        /// extension
+        /// </summary>
+        public string max_type = "7seg";
         public string matrix_value_correspondance = "";
 
         // Anlogdisc
         public string discrete_value;
+
+        public List<PinConfig> pinExtensions = new List<PinConfig>();
 
         public void SetAttributes(Dictionary<string, string> pinConfigs)
         {
@@ -74,16 +83,9 @@ namespace GMTHub.Utils
             ushort.TryParse(DictUtils.GetString(pinConfigs, "digit_length"), out digit_length);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "display_offset"), out display_offset);
             bool.TryParse(DictUtils.GetString(pinConfigs, "reverse_digit"), out reverse_digit);
-            ushort.TryParse(DictUtils.GetString(pinConfigs, "max_type"), out max_type);
-            if(max_type == 1)
-            {
-                // Pour affichage matrix: digit 2 max (clé du tableau MatrixNumber dans Arduino)
-                digit_length = 2;
-                display_offset = 0;
-                reverse_digit = false;
-           }
             ushort.TryParse(DictUtils.GetString(pinConfigs, "blink"), out blink);
-            
+            long.TryParse(DictUtils.GetString(pinConfigs, "cache"), out cache);
+
             Single.TryParse(DictUtils.GetString(pinConfigs, "servo_step_value"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out servo_step_value);
             Single.TryParse(DictUtils.GetString(pinConfigs, "data_offset"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out data_offset);
             Single.TryParse(DictUtils.GetString(pinConfigs, "data_min_value"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out data_min_value);
@@ -94,6 +96,14 @@ namespace GMTHub.Utils
             data_binding = DictUtils.GetString(pinConfigs, "data_binding", "");
             discrete_value = DictUtils.GetString(pinConfigs, "discrete_value", "");
             matrix_value_correspondance = DictUtils.GetString(pinConfigs, "matrix_value_correspondance", "");
+            max_type = DictUtils.GetString(pinConfigs, "max_type", "");
+            if (max_type == "matrix")
+            {
+                // Pour affichage matrix: digit 2 max (clé du tableau MatrixNumber dans Arduino)
+                digit_length = 2;
+                display_offset = 0;
+                reverse_digit = false;
+            }
 
             bool.TryParse(DictUtils.GetString(pinConfigs, "servo_reverse_rotation"), out servo_reverse_rotation);
             bool.TryParse(DictUtils.GetString(pinConfigs, "disabled"), out disabled);
@@ -111,7 +121,7 @@ namespace GMTHub.Utils
             FileIniDataParser deviceConfig = new FileIniDataParser();
             try
             {
-                Data = deviceConfig.ReadFile("GMTHub.ini");
+                Data = deviceConfig.ReadFile("./Config/GMTHub.ini");
                 GetBoards();
             }
             catch (Exception ex)
@@ -150,18 +160,20 @@ namespace GMTHub.Utils
                         byte boardNumber = byte.Parse(item.SectionName.Replace("BOARD_", "").Trim());
                         // boardsNumber.Add(boardNumber);
                         string name = (item.Keys["board_name"] ?? item.SectionName).Split(';')[0].Trim();
-                        ushort refreshDelay;
-                        if(! ushort.TryParse(item.Keys["fps"], out refreshDelay))
+                        int refreshDelay;
+                        string k = item.Keys["fps"];
+                        if (! int.TryParse(item.Keys["fps"], out refreshDelay))
                         {
                             refreshDelay = 25; // Correspond à 40fps
                         } else
                         {
-                            refreshDelay = (ushort)(1000 / refreshDelay);
+                            refreshDelay = (int)(1000 / refreshDelay);
                         }
                         Boards.Add(boardNumber, new BoardConfig()
                         {
                             name = name,
                             refreshDelay = refreshDelay,
+                            boardNumber = boardNumber,
                             pinConfig = new List<PinConfig>(),
                         });
                     }
@@ -196,6 +208,32 @@ namespace GMTHub.Utils
                     {
                         ConsoleLog.Error("Config error - " + item.SectionName + ": " + ex.Message);
                     }
+                }
+                // Section pin extension BOARD_N.PIN_X.Y
+                else if (Regex.Match(item.SectionName.Trim(), @"^BOARD_[0-9]{1,}\.PIN_[0-9]{1,}\.[0-9]{1,}$").Success)
+                {
+                    string[] boardPin = item.SectionName.Trim().Split('.');
+                    byte boardNumber = byte.Parse(boardPin[0].Replace("BOARD_", "").Trim());
+                    byte pinNumber = byte.Parse(boardPin[1].Replace("PIN_", "").Trim());
+                    byte extensionNumber = byte.Parse(boardPin[2].Trim());
+                    PinConfig parentPinConfig = GetBoardConfig(boardNumber).pinConfig.Find(pinConfig => pinConfig.pin == pinNumber);
+                    PinConfig pinExtentionConfig = new PinConfig()
+                    {
+                        pin = extensionNumber,
+                        output_type = "digital", // Uniquement digital supporté par max72
+                    };
+                    // TODO refactor avec le if précédent
+                    Dictionary<string, string> pinConfigs = new Dictionary<string, string>();
+                    foreach (KeyData key in item.Keys)
+                    {
+                        // Split ; pour enlever les comments
+                        pinConfigs.Add(key.KeyName.Trim(), key.Value.Split(';')[0].Trim());
+                    }
+                    pinExtentionConfig.SetAttributes(pinConfigs);
+
+
+                    ObjectUtils.CopyValues(parentPinConfig, pinExtentionConfig);
+                    parentPinConfig.pinExtensions.Add(pinExtentionConfig);
                 }
             }
             
