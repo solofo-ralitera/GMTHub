@@ -40,6 +40,7 @@ namespace GMTHub.Models
         public bool blinkerLeft { get; internal set; }
         public bool blinkerRight { get; internal set; }
         public bool hazardLight { get; internal set; }
+        public bool brake { get; internal set; }
 
         /// <summary>
         /// Intensity of the dashboard backlight as factor. <0,1>
@@ -172,6 +173,8 @@ namespace GMTHub.Models
                 {
                     case "servo":
                         return ProcessServo(pinConfig);
+                    case "frequency":
+                        return ProcessFrequency(pinConfig);                        
                     case "digital":
                         return ProcessDigital(pinConfig);
                     case "analog":
@@ -256,6 +259,15 @@ namespace GMTHub.Models
             }
             // servoMaxRange - angle: pour avoir un sens gauche vers droite
             return $"s{pinConfig.pin.ToString("00")}{(angle).ToString("000")}";
+        }
+
+        public string ProcessFrequency(PinConfig pinConfig)
+        {
+            float value = StringUtils.ParseFloat(this.GetType().GetProperty(pinConfig.data_binding).GetValue(this, null).ToString());
+            ushort frequency = (ushort) Math.Max(Math.Min(
+                Math.Round(value / pinConfig.device_step_value), pinConfig.device_max_range
+            ), pinConfig.device_min_range);
+            return $"t{pinConfig.pin.ToString("00")}{(frequency).ToString("0000")}";
         }
 
         public string ProcessDigital(PinConfig pinConfig, bool returnStringValue = false)
@@ -358,7 +370,7 @@ namespace GMTHub.Models
                 value = iValue.ToString();
             }
             int maxType = pinConfig.max_type == "7seg" ? 0 : (pinConfig.max_type == "matrix" ? 1 : 2);
-            return $"m{pinConfig.pin.ToString("00")}{pinConfig.din_pin.ToString("00")}{pinConfig.cs_pin.ToString("00")}{pinConfig.clk_pin.ToString("00")}{pinConfig.display_offset.ToString("00")}{maxType}{digitLength.ToString("00")}{Blink(pinConfig, value).PadLeft(digitLength, ' ')}";
+            return $"m{pinConfig.pin.ToString("00")}{pinConfig.cs_pin.ToString("00")}{pinConfig.display_offset.ToString("00")}{maxType}{digitLength.ToString("00")}{Blink(pinConfig, value).PadLeft(digitLength, ' ')}";
         }
 
         public string ProcessMaxExtension(PinConfig pinConfig)
@@ -375,7 +387,7 @@ namespace GMTHub.Models
             {
                 resultByte += Convert.ToByte(resultString.Substring(i, 8), 2).ToString().PadLeft(3, '0');
             }
-            return $"m{pinConfig.pin.ToString("00")}{pinConfig.din_pin.ToString("00")}{pinConfig.cs_pin.ToString("00")}{pinConfig.clk_pin.ToString("00")}{pinConfig.display_offset.ToString("00")}224{resultByte}";
+            return $"m{pinConfig.pin.ToString("00")}{pinConfig.cs_pin.ToString("00")}{pinConfig.display_offset.ToString("00")}224{resultByte}";
         }
 
 

@@ -16,13 +16,13 @@ namespace GMTHub
     {
         static void Main(string[] args)
         {
-            GMTConfig config = new GMTConfig();
             IGameProvider game = new ScSSProvider();
             if (!game.Init())
             {
                 ConsoleLog.Error("Game init error");
                 return;
             }
+            GMTConfig config = new GMTConfig(game.GetGameName());
 
             ICom com = new PortCom();
             com.SetConfig(config);

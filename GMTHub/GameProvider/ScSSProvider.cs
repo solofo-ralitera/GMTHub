@@ -3,6 +3,7 @@ using GMTHub.Models;
 using GMTHub.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -23,6 +24,11 @@ namespace GMTHub.GameProvider
         {
             sdk = new SCSSdkClient();
             dataProvider = new MemoryMappedFileProvider();
+        }
+
+        public string GetGameName()
+        {
+            return "Ets2";
         }
 
         public bool Init()
@@ -118,6 +124,7 @@ namespace GMTHub.GameProvider
                 parkingBrake = telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_ParkingBrake,
                 motorBrake = telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_MotorBrake,
                 wipers = telemetryData.TruckValues_CurrentValues_DashboardValues_Wipers,
+                brake = telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_MotorBrake || telemetryData.TruckValues_CurrentValues_LightsValues_Brake,
 
                 blinkerLeft = telemetryData.TruckValues_CurrentValues_LightsValues_BlinkerLeftOn,
                 blinkerRight = telemetryData.TruckValues_CurrentValues_LightsValues_BlinkerRightOn,
@@ -134,7 +141,7 @@ namespace GMTHub.GameProvider
                 distance = telemetryData.NavigationValues_NavigationDistance,
 
                 beaconLight = telemetryData.TruckValues_CurrentValues_LightsValues_Beacon,
-                beamHighLight = telemetryData.TruckValues_CurrentValues_LightsValues_BeamHigh,
+                beamHighLight = telemetryData.TruckValues_CurrentValues_LightsValues_BeamLow && telemetryData.TruckValues_CurrentValues_LightsValues_BeamHigh,
                 beamLowLight = telemetryData.TruckValues_CurrentValues_LightsValues_BeamLow,
                 brakeLight = telemetryData.TruckValues_CurrentValues_LightsValues_Brake,
                 cruiseControl_on = telemetryData.TruckValues_CurrentValues_DashboardValues_CruiseControl,

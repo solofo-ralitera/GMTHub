@@ -12,6 +12,8 @@ namespace GMTHub.GameProvider
     {
         bool Init();
 
+        string GetGameName();
+
         TelemetryData GetData();
 
         void SetBlinker(Blinker blinker);

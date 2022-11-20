@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using System.Collections;
 using System.Globalization;
+using System.IO;
 
 namespace GMTHub.Utils
 {
@@ -31,6 +32,7 @@ namespace GMTHub.Utils
         ///     analog
         ///     max7seg
         ///     analogdisc
+        ///     frequency (pulse by frequency. E.g. tacho, speedo)
         /// </summary>
         public string output_type;
 
@@ -44,6 +46,20 @@ namespace GMTHub.Utils
         public ushort servo_relative_max;
         public bool servo_reverse_rotation = false;
 
+        // From factor devices (tacho, speedo)
+        /// <summary>
+        /// Min  frequency (hertz) accepted by the device
+        /// </summary>
+        public ushort device_min_range = 0;
+        /// <summary>
+        /// Max  frequency (hertz) accepted by the device
+        /// </summary>
+        public ushort device_max_range = 360;
+        /// <summary>
+        /// unit/hertz (ex: rpm/hertz, km/hertz)
+        /// </summary>
+        public float device_step_value = 1;
+
         // Common data
         public ushort blink = 0;
         public string blink_if = "";
@@ -52,10 +68,10 @@ namespace GMTHub.Utils
         public float data_max_value;
         public long cache;
 
-        // 7Seg
-        public ushort din_pin = 16;
-        public ushort cs_pin = 18;
-        public ushort clk_pin = 17;
+        // 7Seg, mode SPI hardware, pas besoin de din et clk
+        // public ushort din_pin = 11;
+        public ushort cs_pin = 12;
+        // public ushort clk_pin = 13;
         public ushort digit_length = 4;
         public bool reverse_digit = false;
         public ushort display_offset = 0;
@@ -77,9 +93,9 @@ namespace GMTHub.Utils
             ushort.TryParse(DictUtils.GetString(pinConfigs, "servo_max_range"), out servo_max_range);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "servo_relative_min"), out servo_relative_min);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "servo_relative_max"), out servo_relative_max);
-            ushort.TryParse(DictUtils.GetString(pinConfigs, "din_pin"), out din_pin);
+            // ushort.TryParse(DictUtils.GetString(pinConfigs, "din_pin"), out din_pin);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "cs_pin"), out cs_pin);
-            ushort.TryParse(DictUtils.GetString(pinConfigs, "clk_pin"), out clk_pin);
+            // ushort.TryParse(DictUtils.GetString(pinConfigs, "clk_pin"), out clk_pin);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "digit_length"), out digit_length);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "display_offset"), out display_offset);
             bool.TryParse(DictUtils.GetString(pinConfigs, "reverse_digit"), out reverse_digit);
@@ -90,6 +106,11 @@ namespace GMTHub.Utils
             Single.TryParse(DictUtils.GetString(pinConfigs, "data_offset"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out data_offset);
             Single.TryParse(DictUtils.GetString(pinConfigs, "data_min_value"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out data_min_value);
             Single.TryParse(DictUtils.GetString(pinConfigs, "data_max_value"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out data_max_value);
+
+            Single.TryParse(DictUtils.GetString(pinConfigs, "device_step_value"), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out device_step_value);
+            ushort.TryParse(DictUtils.GetString(pinConfigs, "device_min_range"), out device_min_range);
+            ushort.TryParse(DictUtils.GetString(pinConfigs, "device_max_range"), out device_max_range);
+
 
             blink_if = DictUtils.GetString(pinConfigs, "blink_if", "");
             output_type = DictUtils.GetString(pinConfigs, "output_type", "");
@@ -116,13 +137,32 @@ namespace GMTHub.Utils
         protected IniData Data;
         public Dictionary<byte, BoardConfig> Boards = new Dictionary<byte, BoardConfig>();
         
-        public GMTConfig()
+        public GMTConfig(string gameIni)
         {
             FileIniDataParser deviceConfig = new FileIniDataParser();
             try
             {
-                Data = deviceConfig.ReadFile("./Config/GMTHub.ini");
+                FileInfo confFile = new FileInfo($"./Config/{gameIni}.ini");
+                Data = deviceConfig.ReadFile(confFile.FullName);
                 GetBoards();
+
+                FileSystemWatcher watcher = new FileSystemWatcher(confFile.DirectoryName);
+                watcher.NotifyFilter = NotifyFilters.Attributes
+                                 | NotifyFilters.CreationTime
+                                 | NotifyFilters.DirectoryName
+                                 | NotifyFilters.FileName
+                                 | NotifyFilters.LastAccess
+                                 | NotifyFilters.LastWrite
+                                 | NotifyFilters.Security
+                                 | NotifyFilters.Size;
+                watcher.Filter = "*.ini";
+                watcher.IncludeSubdirectories = false;
+                watcher.EnableRaisingEvents = true;
+                watcher.Changed += (object sender, FileSystemEventArgs e) =>
+                {
+                    Data = deviceConfig.ReadFile(confFile.FullName);
+                    GetBoards();
+                };
             }
             catch (Exception ex)
             {
@@ -161,13 +201,16 @@ namespace GMTHub.Utils
                         // boardsNumber.Add(boardNumber);
                         string name = (item.Keys["board_name"] ?? item.SectionName).Split(';')[0].Trim();
                         int refreshDelay;
-                        string k = item.Keys["fps"];
                         if (! int.TryParse(item.Keys["fps"], out refreshDelay))
                         {
                             refreshDelay = 25; // Correspond à 40fps
                         } else
                         {
                             refreshDelay = (int)(1000 / refreshDelay);
+                        }
+                        if(Boards.ContainsKey(boardNumber))
+                        {
+                            Boards.Remove(boardNumber);
                         }
                         Boards.Add(boardNumber, new BoardConfig()
                         {
