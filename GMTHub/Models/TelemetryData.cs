@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 // https://etcars.readthedocs.io/en/master/thedata.html
 
@@ -131,6 +132,16 @@ namespace GMTHub.Models
         /// NOTE: When electronics are disabled or when route advisor is completely disabled, this value will ALWAYS be 0.
         /// </summary>
         public float distance { get; internal set; }
+
+        /// <summary>
+        /// All damages are in %
+        /// </summary>
+        public float damage_engine { get; internal set; }
+        public float damage_transmission { get; internal set; }
+        public float damage_cabin { get; internal set; }
+        public float damage_chassis { get; internal set; }
+        public float damage_wheels { get; internal set; }
+        public float damage_trailer { get; internal set; }
 
 
         public Blinker blinker;
@@ -264,9 +275,13 @@ namespace GMTHub.Models
         public string ProcessFrequency(PinConfig pinConfig)
         {
             float value = StringUtils.ParseFloat(this.GetType().GetProperty(pinConfig.data_binding).GetValue(this, null).ToString());
-            ushort frequency = (ushort) Math.Max(Math.Min(
+            ushort frequency = (ushort) Math.Min(
                 Math.Round(value / pinConfig.device_step_value), pinConfig.device_max_range
-            ), pinConfig.device_min_range);
+            );
+            if(frequency < pinConfig.device_min_range)
+            {
+                frequency = 0;
+            }
             return $"t{pinConfig.pin.ToString("00")}{(frequency).ToString("0000")}";
         }
 
@@ -276,7 +291,7 @@ namespace GMTHub.Models
             if(value is bool)
             {
                 bool bValue = (bool)value;
-                if (returnStringValue) return bValue ? "1" : "0";
+                if (returnStringValue) return Blink(pinConfig, bValue ? 1 : 0).ToString();
                 return $"d{pinConfig.pin.ToString("00")}{Blink(pinConfig, (bValue ? 1 : 0))}";
             }
             float fValue = StringUtils.ParseFloat(value.ToString().ToString());
@@ -370,7 +385,7 @@ namespace GMTHub.Models
                 value = iValue.ToString();
             }
             int maxType = pinConfig.max_type == "7seg" ? 0 : (pinConfig.max_type == "matrix" ? 1 : 2);
-            return $"m{pinConfig.pin.ToString("00")}{pinConfig.cs_pin.ToString("00")}{pinConfig.display_offset.ToString("00")}{maxType}{digitLength.ToString("00")}{Blink(pinConfig, value).PadLeft(digitLength, ' ')}";
+            return $"m{pinConfig.pin.ToString("00")}{pinConfig.display_offset.ToString("00")}{maxType}{digitLength.ToString("00")}{Blink(pinConfig, value).PadLeft(digitLength, ' ')}";
         }
 
         public string ProcessMaxExtension(PinConfig pinConfig)
@@ -387,7 +402,7 @@ namespace GMTHub.Models
             {
                 resultByte += Convert.ToByte(resultString.Substring(i, 8), 2).ToString().PadLeft(3, '0');
             }
-            return $"m{pinConfig.pin.ToString("00")}{pinConfig.cs_pin.ToString("00")}{pinConfig.display_offset.ToString("00")}224{resultByte}";
+            return $"m{pinConfig.pin.ToString("00")}{pinConfig.display_offset.ToString("00")}224{resultByte}";
         }
 
 
@@ -423,25 +438,32 @@ namespace GMTHub.Models
         /// <returns></returns>
         public string ProcessLcd(PinConfig pinConfig)
         {
+            byte currentPage = 1;
+            PinConfig pageConfig = pinConfig.pinExtensions.Find(p => p.pin == currentPage);
+            string templateTxt = EvaluateDataBinding(pageConfig.data_binding);
+            return $"l{pinConfig.pin.ToString("00")}{templateTxt.Length.ToString("000")}{templateTxt}";
+        }
 
-            string templateTxt = pinConfig.data_binding;
+        protected string EvaluateDataBinding(string dataBinding)
+        {
+            string templateTxt = dataBinding.Trim();
             string pattern = @"\[([a-z0-9_|]{1,})\]";
             try
             {
-                foreach (Match match in Regex.Matches(templateTxt, pattern,RegexOptions.IgnoreCase))
+                foreach (Match match in Regex.Matches(templateTxt, pattern, RegexOptions.IgnoreCase))
                 {
                     string[] field = match.Groups[1].Value.Split('|');
                     int length = field.Count() > 0 ? Convert.ToUInt16(field[1]) : 0;
                     string fieldValue = this.GetType().GetProperty(field[0]).GetValue(this, null).ToString().Trim().PadLeft(length, ' ').Substring(0, length);
                     templateTxt = templateTxt.Replace(match.Groups[0].Value, fieldValue);
                 }
+                return templateTxt;
             }
-            catch (RegexMatchTimeoutException)
+            catch (Exception)
             {
                 // Do Nothing: no match
                 return "";
             }
-            return $"l{pinConfig.pin.ToString("00")}{templateTxt.Length.ToString("000")}{templateTxt}";
         }
     }
 }

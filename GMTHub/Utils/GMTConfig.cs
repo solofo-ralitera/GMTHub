@@ -70,7 +70,7 @@ namespace GMTHub.Utils
 
         // 7Seg, mode SPI hardware, pas besoin de din et clk
         // public ushort din_pin = 11;
-        public ushort cs_pin = 12;
+        // public ushort cs_pin = 12;
         // public ushort clk_pin = 13;
         public ushort digit_length = 4;
         public bool reverse_digit = false;
@@ -94,7 +94,7 @@ namespace GMTHub.Utils
             ushort.TryParse(DictUtils.GetString(pinConfigs, "servo_relative_min"), out servo_relative_min);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "servo_relative_max"), out servo_relative_max);
             // ushort.TryParse(DictUtils.GetString(pinConfigs, "din_pin"), out din_pin);
-            ushort.TryParse(DictUtils.GetString(pinConfigs, "cs_pin"), out cs_pin);
+            // ushort.TryParse(DictUtils.GetString(pinConfigs, "cs_pin"), out cs_pin);
             // ushort.TryParse(DictUtils.GetString(pinConfigs, "clk_pin"), out clk_pin);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "digit_length"), out digit_length);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "display_offset"), out display_offset);
@@ -274,6 +274,30 @@ namespace GMTHub.Utils
                     }
                     pinExtentionConfig.SetAttributes(pinConfigs);
 
+                    ObjectUtils.CopyValues(parentPinConfig, pinExtentionConfig);
+                    parentPinConfig.pinExtensions.Add(pinExtentionConfig);
+                }
+                // Section LCD page BOARD_N.PIN_X.PAGE_Y
+                else if (Regex.Match(item.SectionName.Trim(), @"^BOARD_[0-9]{1,}\.PIN_[0-9]{1,}\.PAGE_[0-9]{1,}$").Success)
+                {
+                    string[] boardPin = item.SectionName.Trim().Split('.');
+                    byte boardNumber = byte.Parse(boardPin[0].Replace("BOARD_", "").Trim());
+                    byte pinNumber = byte.Parse(boardPin[1].Replace("PIN_", "").Trim());
+                    byte pageNumber = byte.Parse(boardPin[2].Replace("PAGE_", "").Trim());
+                    PinConfig parentPinConfig = GetBoardConfig(boardNumber).pinConfig.Find(pinConfig => pinConfig.pin == pinNumber);
+                    PinConfig pinExtentionConfig = new PinConfig()
+                    {
+                        pin = pageNumber,
+                        output_type = "lcd",
+                    };
+                    // TODO refactor avec le if précédent
+                    Dictionary<string, string> pinConfigs = new Dictionary<string, string>();
+                    foreach (KeyData key in item.Keys)
+                    {
+                        // Split ; pour enlever les comments
+                        pinConfigs.Add(key.KeyName.Trim(), key.Value.Split(';')[0].Trim());
+                    }
+                    pinExtentionConfig.SetAttributes(pinConfigs);
 
                     ObjectUtils.CopyValues(parentPinConfig, pinExtentionConfig);
                     parentPinConfig.pinExtensions.Add(pinExtentionConfig);

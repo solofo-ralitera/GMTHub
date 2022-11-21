@@ -1,5 +1,3 @@
-#include "LedController.hpp" // https://github.com/noah1510/LedController
-
 #define BOARD_NUMBER "1"
 
 #define LCD_ADRESS 0x27
@@ -129,6 +127,24 @@
 #define ACK_SCAN "ack_gmtscan_" BOARD "-" BOARD_NUMBER
 #define ACK_READY "ready_" BOARD "-" BOARD_NUMBER
 
+// Needed for Serial read
+bool serialStringAvailable = false;
+String serialString = "";
+
+boolean arePinsInitialized[TOTAL_NUMBER_OF_PIN] = { false };
+
+#ifdef USE_SERVO
+#include <Servo.h>
+Servo availableServos[TOTAL_NUMBER_OF_PIN];
+#endif
+
+#ifdef USE_TONE
+#include <Tone.h>
+Tone availabileTones[TOTAL_NUMBER_OF_PIN];
+#endif
+
+#ifdef MAX72_SEGMENTS
+#include "LedController.hpp" // https://github.com/noah1510/LedController
 ByteBlock Matrixdigits[30] = {
   { // 0: 0
     B00000000,
@@ -402,23 +418,6 @@ ByteBlock Matrixdigits[30] = {
     B00000000
   }
 };
-
-// Needed for Serial read
-bool serialStringAvailable = false;
-String serialString = "";
-
-boolean arePinsInitialized[TOTAL_NUMBER_OF_PIN] = { false };
-
-#ifdef USE_SERVO
-#include <Servo.h>
-Servo availableServos[TOTAL_NUMBER_OF_PIN];
-#endif
-
-#ifdef USE_TONE
-#include <Tone.h>
-Tone availabileTones[TOTAL_NUMBER_OF_PIN];
-#endif
-
 short max72Initialisation[MAX72_SEGMENTS] = {0};
 LedController<1,1> available7segMax7219[MAX72_SEGMENTS];
 short GetCacheIndexForMax72(short pin) {
@@ -437,11 +436,11 @@ short GetCacheIndexForMax72(short pin) {
     }
   }  
 }
+#endif
 
 #ifdef LCD_ADRESS
 // SDA-> A4
 // SCL-> A5
-// LiquidCrystal_PCF8574 lcd(0x27);
 #include "LiquidCrystal_I2C_DFRobot.h"
 LiquidCrystal_I2C I2CLCD(LCD_ADRESS, LCD_COLUMN, LCD_ROW);
 #endif
@@ -453,7 +452,6 @@ void setup() {
   #ifdef LCD_ADRESS
   I2CLCD.init();
 	I2CLCD.backlight();
-	I2CLCD.print("Hello world...");
   #endif
 
   // wait for serial port to connect. Needed for native USB port only (type Leonardo)
@@ -509,7 +507,6 @@ void loop() {
   // Check si les données sont complètes
   if(!serialString.startsWith(":") && !serialString.endsWith(":")) {
     // No thing to do
-    // :s06134s03160d041a05000m1010111200002 0m111011120200285m141415160010225d070d080:#
     digitalWrite(LED_BUILTIN, HIGH);
     resetSerial();
     return;
@@ -517,16 +514,7 @@ void loop() {
   
   // Suppr le delim ':' au début de la chaine
   serialString.remove(0, 1);
-  // Test long
-  // :s06114s03160d040a05000m1010111200204   0m1701718190010225d070a09000d080:#
-  // :s06114s03160d040a05000m1010111200204   0l180060,0874m1717181900224000000000000000000000000d070a09000d080:#
-
-  // :s03050:#    Test servo
-  // :d071:#    Test digital
-  // :a05066:#  Test analog
-  // :m100906081234:#   Test Max7219
-  // :s03050d021:#
-  // :s03052d070d040:#
+  
   // 4 :length min des commandes
   while(serialString.length() > 4) {
     short pin = serialString.substring(1, 3).toInt();
@@ -561,10 +549,10 @@ void loop() {
       }
       short angle = serialString.substring(3, 6).toInt();
       availableServos[pin].write(angle); 
-      serialString.remove(0, 6);
       #endif
+      serialString.remove(0, 6);
     }
-    // 
+    // Tone (device driven by frequency)
     else if(code == 't') {
       #ifdef USE_TONE
       if(arePinsInitialized[pin] == false) {
@@ -578,33 +566,24 @@ void loop() {
     }
     // Max 7seg Display mode SPI
     else if(code == 'm') {
-      // m[2 PIN][2 DIN][2 CS][2 CLK][2 Digit length][8 number to display]
-      // :m1616181704   0#:
-      // :m16161718001109876543211#:
-      short pinCS = serialString.substring(3, 5).toInt();
-      // short pinCS = serialString.substring(5, 7).toInt();
-      // short pinCLK = serialString.substring(7, 9).toInt();
-      short displayOffset = serialString.substring(5, 7).toInt();
-      short maxType = serialString.substring(7, 8).toInt();
-      short digitLen = serialString.substring(8, 10).toInt();
-      short maxIdx = GetCacheIndexForMax72(pinCS);
-      // Use pinCS as key to allow up to 3 configurations on a single 7seg
-      // :m141415160010226:#
-      if(arePinsInitialized[pinCS] == false) {
-        available7segMax7219[maxIdx] = LedController<1,1>(pinCS); // Use SPI hardware instead of DIN,CLK,CS
+      // :m0200224126000000000000000000000:#
+      short displayOffset = serialString.substring(3, 5).toInt();
+      short maxType = serialString.substring(5, 6).toInt();
+      short digitLen = serialString.substring(6, 8).toInt();
+      #ifdef MAX72_SEGMENTS
+      short maxIdx = GetCacheIndexForMax72(pin);
+     // :m141415160010226:#
+      if(arePinsInitialized[pin] == false) {
+        available7segMax7219[maxIdx] = LedController<1,1>(pin); // Use SPI hardware instead of DIN,CLK,CS
         available7segMax7219[maxIdx].setIntensity(8);
         available7segMax7219[maxIdx].clearMatrix();
-        arePinsInitialized[pinCS] = true;
+        arePinsInitialized[pin] = true;
       }
-      String numberToDisplay = serialString.substring(10, 10 + digitLen);
+      String numberToDisplay = serialString.substring(8, 8 + digitLen);
       if(maxType == 0) {
         // 7 Seg
-        // :m101011120000287:#
-        // :m101011120000587.12:#
-        // :m10101112000043.59:#
-        // :m1010111200004   5:#
         byte currDigitPosition = 0;
-        // available7segMax7219[maxIdx].clearSegment(0);
+        available7segMax7219[maxIdx].clearSegment(0);
         for(int i=0; i < digitLen; i++) {
             bool hasDP = i < digitLen - 1 && numberToDisplay[i+ 1] == '.';
             if(numberToDisplay[i] == '.') {
@@ -612,36 +591,21 @@ void loop() {
               // d'où l'utilité de currDigitPosition
               continue;
             }
-            // :m1010111200002 0m111011120200285:#
-            if(numberToDisplay[i] == ' ') {
-              available7segMax7219[maxIdx].setChar(
-                0, 
-                displayOffset + currDigitPosition, 
-                numberToDisplay[i], 
-                hasDP
-              );
-            } else {
-              available7segMax7219[maxIdx].setDigit(
-                0, 
-                displayOffset + currDigitPosition, 
-                numberToDisplay[i], 
-                hasDP
-              );
-            }
+            available7segMax7219[maxIdx].setChar(
+              0, 
+              displayOffset + currDigitPosition, 
+              numberToDisplay[i], 
+              hasDP
+            );
             currDigitPosition++;
         }
       } else if(maxType == 1) {
         // Matrix 8x8
-        // :m17171819002013:#
-        // :m141415160010226:#
         numberToDisplay.trim();
         if(numberToDisplay == "") numberToDisplay = "29"; // 29 correspond à vide dans le tableau des caractères du matrix (Matrixdigits)
         available7segMax7219[maxIdx].displayOnSegment(0, 0, Matrixdigits[numberToDisplay.toInt()]);
       } else if(maxType == 2) {
-        // Max72xx as digital pin extension
-        // exemple start at 143
-        // :m1717181900224128000110000072216248255:#
-        // :m1717181900224128000128000000000000000:#
+        // Max72xx as led extension
         if(digitLen == 24)  {
           available7segMax7219[maxIdx].displayOnSegment(0, 0, {
             (byte)numberToDisplay.substring(0, 3).toInt(),
@@ -655,30 +619,59 @@ void loop() {
           });
         }        
       }
-      serialString.remove(0, 10 + digitLen);
+      #endif
+      serialString.remove(0, 8 + digitLen);
     }
     // lcd
     else if(code == 'l') {
-      // :l17010azertyu567ptyuiogdd:#
-      // :l17010azertyu567:#
-      // :l180200.0330 12.318     98:#
       short stringLen = serialString.substring(3, 6).toInt();
+      #ifdef LCD_ADRESS
       String stringToDisplay = serialString.substring(6, 6 + stringLen);
-      
-      // lcd.begin(LCD_COLUMN, LCD_ROW);
-      // lcd.home();
-      // lcd.clear();
-      // lcd.setBacklight(255);
-      // lcd.print(stringToDisplay);
-      
+      byte currColumn = 0;
+      byte currentLine = 0;
+      byte charPrinted = 0;
+      I2CLCD.setCursor(0, 0); 
+      for (byte s = 0; s < stringToDisplay.length(); s++)
+      { 
+        if(stringToDisplay[s] == '|') 
+        { 
+          // Efface les colonnes restants de la ligne
+          for(byte c = currColumn; c < LCD_COLUMN; c++) {
+            I2CLCD.print(' ');  
+            charPrinted++;          
+          }
+          currColumn = 0;
+          currentLine++; 
+          if(currentLine >= LCD_ROW) {
+            // Dépasse l'affichage du lcd            
+            break;
+          }
+          I2CLCD.setCursor(0, currentLine); 
+          continue;
+        }
+        currColumn++;
+        // Cas ou la ligne dépasse l'affichage du lcd: ignore
+        if(currColumn <= LCD_COLUMN) {
+          I2CLCD.print(stringToDisplay[s]);
+        }
+        charPrinted++;
+      }
+      // Efface les vides restants
+      byte remaining = (LCD_COLUMN * LCD_ROW) - charPrinted;
+      for(byte r = 0; r < remaining; r++) {
+        I2CLCD.print(' ');            
+        currColumn++;
+        if(currColumn >= LCD_COLUMN) {
+          currColumn = 0;
+          currentLine++; 
+          I2CLCD.setCursor(0, currentLine); 
+        }
+      }
+      #endif  
       serialString.remove(0, 6 + stringLen);
     }
     else {
       // Fallback
-      /*Serial.print("Code not supported: ");
-      Serial.print(code);
-      Serial.println(" - " + serialString);
-      */
       digitalWrite(LED_BUILTIN, HIGH);
       resetSerial();
       return;

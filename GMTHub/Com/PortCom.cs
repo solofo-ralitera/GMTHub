@@ -39,7 +39,7 @@ namespace GMTHub.Com
                     port.port.Close();
                     port.port.Dispose();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     // Raf
                 }

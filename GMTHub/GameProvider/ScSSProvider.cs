@@ -140,15 +140,15 @@ namespace GMTHub.GameProvider
                 cargoMass_ton = telemetryData.JobValues_CargoValues_Mass / 1000,
                 distance = telemetryData.NavigationValues_NavigationDistance,
 
-                beaconLight = telemetryData.TruckValues_CurrentValues_LightsValues_Beacon,
-                beamHighLight = telemetryData.TruckValues_CurrentValues_LightsValues_BeamLow && telemetryData.TruckValues_CurrentValues_LightsValues_BeamHigh,
-                beamLowLight = telemetryData.TruckValues_CurrentValues_LightsValues_BeamLow,
-                brakeLight = telemetryData.TruckValues_CurrentValues_LightsValues_Brake,
+                beaconLight = telemetryData.TruckValues_CurrentValues_ElectricEnabled && telemetryData.TruckValues_CurrentValues_LightsValues_Beacon,
+                beamLowLight = telemetryData.TruckValues_CurrentValues_ElectricEnabled && telemetryData.TruckValues_CurrentValues_LightsValues_BeamLow,
+                beamHighLight = telemetryData.TruckValues_CurrentValues_ElectricEnabled && telemetryData.TruckValues_CurrentValues_LightsValues_BeamLow && telemetryData.TruckValues_CurrentValues_LightsValues_BeamHigh,
+                brakeLight = telemetryData.TruckValues_CurrentValues_ElectricEnabled && telemetryData.TruckValues_CurrentValues_LightsValues_Brake,
                 cruiseControl_on = telemetryData.TruckValues_CurrentValues_DashboardValues_CruiseControl,
                 cruiseControl_value = telemetryData.TruckValues_CurrentValues_DashboardValues_CruiseControlSpeed_Value,
                 differentialLock = telemetryData.TruckValues_CurrentValues_DifferentialLock,
-                parkingLight = telemetryData.TruckValues_CurrentValues_LightsValues_Parking,
-                reverseLight = telemetryData.TruckValues_CurrentValues_LightsValues_Reverse,
+                parkingLight = telemetryData.TruckValues_CurrentValues_ElectricEnabled && telemetryData.TruckValues_CurrentValues_LightsValues_Parking,
+                reverseLight = telemetryData.TruckValues_CurrentValues_ElectricEnabled && telemetryData.TruckValues_CurrentValues_LightsValues_Reverse,
                 auxFront = telemetryData.TruckValues_CurrentValues_LightsValues_AuxFront,
                 auxRoof = telemetryData.TruckValues_CurrentValues_LightsValues_AuxRoof,
                 // TODO calculated warning
@@ -156,7 +156,12 @@ namespace GMTHub.GameProvider
                 // Si differential lock et vitesse elevé
                 // Si depassement limitation vitesse
 
-
+                damage_cabin = telemetryData.TruckValues_CurrentValues_DamageValues_Cabin * 100,
+                damage_chassis = telemetryData.TruckValues_CurrentValues_DamageValues_Chassis * 100,
+                damage_engine = telemetryData.TruckValues_CurrentValues_DamageValues_Engine * 100,
+                damage_transmission = telemetryData.TruckValues_CurrentValues_DamageValues_Transmission * 100,
+                damage_wheels = telemetryData.TruckValues_CurrentValues_DamageValues_WheelsAvg * 100,
+                damage_trailer = telemetryData.JobValues_CargoValues_CargoDamage * 100,
 
             };
         }
