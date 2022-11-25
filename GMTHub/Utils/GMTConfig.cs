@@ -70,7 +70,7 @@ namespace GMTHub.Utils
 
         // 7Seg, mode SPI hardware, pas besoin de din et clk
         // public ushort din_pin = 11;
-        // public ushort cs_pin = 12;
+        public ushort cs_pin = 12;
         // public ushort clk_pin = 13;
         public ushort digit_length = 4;
         public bool reverse_digit = false;
@@ -94,7 +94,7 @@ namespace GMTHub.Utils
             ushort.TryParse(DictUtils.GetString(pinConfigs, "servo_relative_min"), out servo_relative_min);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "servo_relative_max"), out servo_relative_max);
             // ushort.TryParse(DictUtils.GetString(pinConfigs, "din_pin"), out din_pin);
-            // ushort.TryParse(DictUtils.GetString(pinConfigs, "cs_pin"), out cs_pin);
+            ushort.TryParse(DictUtils.GetString(pinConfigs, "cs_pin"), out cs_pin);
             // ushort.TryParse(DictUtils.GetString(pinConfigs, "clk_pin"), out clk_pin);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "digit_length"), out digit_length);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "display_offset"), out display_offset);

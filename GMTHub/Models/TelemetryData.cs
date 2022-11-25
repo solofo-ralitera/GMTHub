@@ -385,7 +385,7 @@ namespace GMTHub.Models
                 value = iValue.ToString();
             }
             int maxType = pinConfig.max_type == "7seg" ? 0 : (pinConfig.max_type == "matrix" ? 1 : 2);
-            return $"m{pinConfig.pin.ToString("00")}{pinConfig.display_offset.ToString("00")}{maxType}{digitLength.ToString("00")}{Blink(pinConfig, value).PadLeft(digitLength, ' ')}";
+            return $"m{pinConfig.pin.ToString("00")}{pinConfig.cs_pin.ToString("00")}{pinConfig.display_offset.ToString("00")}{maxType}{digitLength.ToString("00")}{Blink(pinConfig, value).PadLeft(digitLength, ' ')}";
         }
 
         public string ProcessMaxExtension(PinConfig pinConfig)
@@ -402,7 +402,8 @@ namespace GMTHub.Models
             {
                 resultByte += Convert.ToByte(resultString.Substring(i, 8), 2).ToString().PadLeft(3, '0');
             }
-            return $"m{pinConfig.pin.ToString("00")}{pinConfig.display_offset.ToString("00")}224{resultByte}";
+            // 224 : 2 => max type, 24: digit length (fixe)
+            return $"m{pinConfig.pin.ToString("00")}{pinConfig.cs_pin.ToString("00")}{pinConfig.display_offset.ToString("00")}224{resultByte}";
         }
 
 

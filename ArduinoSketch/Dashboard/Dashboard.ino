@@ -566,24 +566,25 @@ void loop() {
     }
     // Max 7seg Display mode SPI
     else if(code == 'm') {
-      // :m0200224126000000000000000000000:#
-      short displayOffset = serialString.substring(3, 5).toInt();
-      short maxType = serialString.substring(5, 6).toInt();
-      short digitLen = serialString.substring(6, 8).toInt();
+      short csPin = serialString.substring(3, 5).toInt();
+      short displayOffset = serialString.substring(5, 7).toInt();
+      short maxType = serialString.substring(7, 8).toInt();
+      short digitLen = serialString.substring(8, 10).toInt();
       #ifdef MAX72_SEGMENTS
-      short maxIdx = GetCacheIndexForMax72(pin);
-     // :m141415160010226:#
-      if(arePinsInitialized[pin] == false) {
-        available7segMax7219[maxIdx] = LedController<1,1>(pin); // Use SPI hardware instead of DIN,CLK,CS
+      // Use csPin as key to allow up to 3 value on a single max7219
+      short maxIdx = GetCacheIndexForMax72(csPin);
+      if(arePinsInitialized[csPin] == false) {
+        available7segMax7219[maxIdx] = LedController<1,1>(csPin); // Use SPI hardware instead of DIN,CLK,CS
         available7segMax7219[maxIdx].setIntensity(8);
         available7segMax7219[maxIdx].clearMatrix();
-        arePinsInitialized[pin] = true;
+        arePinsInitialized[csPin] = true;
       }
-      String numberToDisplay = serialString.substring(8, 8 + digitLen);
+      String numberToDisplay = serialString.substring(10, 10 + digitLen);
       if(maxType == 0) {
         // 7 Seg
+        // :m14140000888888888:#
         byte currDigitPosition = 0;
-        available7segMax7219[maxIdx].clearSegment(0);
+        // available7segMax7219[maxIdx].clearSegment(0);
         for(int i=0; i < digitLen; i++) {
             bool hasDP = i < digitLen - 1 && numberToDisplay[i+ 1] == '.';
             if(numberToDisplay[i] == '.') {
@@ -591,12 +592,21 @@ void loop() {
               // d'où l'utilité de currDigitPosition
               continue;
             }
-            available7segMax7219[maxIdx].setChar(
-              0, 
-              displayOffset + currDigitPosition, 
-              numberToDisplay[i], 
-              hasDP
-            );
+            if(numberToDisplay[i] == ' ') {
+              available7segMax7219[maxIdx].setChar(
+                0, 
+                displayOffset + currDigitPosition, 
+                numberToDisplay[i], 
+                hasDP
+              );
+            } else {
+              available7segMax7219[maxIdx].setDigit(
+                0, 
+                displayOffset + currDigitPosition, 
+                numberToDisplay[i], 
+                hasDP
+              );
+            }
             currDigitPosition++;
         }
       } else if(maxType == 1) {
@@ -620,7 +630,7 @@ void loop() {
         }        
       }
       #endif
-      serialString.remove(0, 8 + digitLen);
+      serialString.remove(0, 10 + digitLen);
     }
     // lcd
     else if(code == 'l') {
