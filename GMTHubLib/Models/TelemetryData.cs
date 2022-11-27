@@ -172,15 +172,14 @@ namespace GMTHubLib.Models
                     ConsoleLog.Error($"Process error on pin {pinConfig.pin}: data_binding is not defined");
                     continue;
                 }
-                string cacheKey = $"{boardConfig.boardNumber}-{pinConfig.pin}";
-                cmd += ProcessPin(pinConfig);
-                /*string stringData = ProcessPin(pinConfig);
-                if(CacheData.ContainsKey(cacheKey) && CacheData[cacheKey] == stringData)
+                // Pour le lcd: rendu à part sans les autres pins pour limiter l'utilisation memoire côté arduino
+                // => cache obligatoire pour le lcd
+                // TODO: use byte for serial communication
+                if(pinConfig.output_type == "lcd" && pinConfig.cache > 1000)
                 {
-                    continue;
+                    return ProcessPin(pinConfig);
                 }
-                CacheData[cacheKey] = stringData;
-                cmd += stringData;*/
+                cmd += ProcessPin(pinConfig);
             }
             return cmd;
         }

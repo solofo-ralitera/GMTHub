@@ -33,6 +33,7 @@ namespace GMTHubLib.Utils
         ///     max7seg
         ///     analogdisc
         ///     frequency (pulse by frequency. E.g. tacho, speedo)
+        ///     lcd
         /// </summary>
         public string output_type;
 
@@ -145,7 +146,11 @@ namespace GMTHubLib.Utils
             FileIniDataParser deviceConfig = new FileIniDataParser();
             try
             {
+#if DEBUG
                 FileInfo confFile = new FileInfo($"../../../Config/{gameIni}.ini");
+#else
+                FileInfo confFile = new FileInfo($"./Config/{gameIni}.ini");
+#endif
                 Data = deviceConfig.ReadFile(confFile.FullName);
                 GetBoards();
 

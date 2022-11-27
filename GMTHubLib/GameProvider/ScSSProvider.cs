@@ -36,9 +36,7 @@ namespace GMTHubLib.GameProvider
             dataProvider.Connect(DefaultSharedMemoryMap);
             if (!dataProvider.Hooked)
             {
-                Console.ForegroundColor = ConsoleColor.DarkRed;
-                Console.WriteLine("Error: dataProvider hooked");
-                Console.ResetColor();
+                ConsoleLog.Error("Error: dataProvider hooked");
                 return false;
             }
             return true;
@@ -57,7 +55,8 @@ namespace GMTHubLib.GameProvider
             {
                 // if sdk not active we don't need to do something
                 ConsoleLog.Error("The game or the SCS-Telemetry is not running");
-                Task.Delay(2000);
+                // Task.Delay(5000);
+                Thread.Sleep(3000);
                 return new TelemetryData
                 {
                     notfilled = true

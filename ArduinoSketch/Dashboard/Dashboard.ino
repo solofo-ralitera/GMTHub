@@ -1,15 +1,26 @@
 #define BOARD_NUMBER "1"
 
-#define LCD_ADRESS 0x27
+// Lcd display configuration
+#define LCD_ADRESS 0x27 // Use LCD?
 #define LCD_COLUMN 20
 #define LCD_ROW 4
 
-// Use either tone or servo (both are not compatible each other), the value is the number of available device
+// Number of device using tone ore servo
+// Use one of tone or servo (both are not compatible each other), the value is the number of available device
 #define USE_TONE 2 
 // #define USE_SERVO 1
 
+// Use analog output?
+// #define ANALOG_OUTPUT
+
+// Use digital output?
+// #define DIGITAL_OUTPUT
+
 // Maximum of max7219 that can be connected (including: 7seg, dot matrix and led extension)
 #define MAX72_SEGMENTS 2
+// #define MAX72_7SEG // Use 7seg?
+// #define MAX72_MATRIX // Use dot matrix?
+#define MAX72_LEDEXT // // Use led extension?
 
 // Serial port configuration
 #define SERIAL_BAUD 9600
@@ -146,6 +157,7 @@ Tone availabileTones[USE_TONE];
 
 #ifdef MAX72_SEGMENTS
 #include "LedController.hpp" // https://github.com/noah1510/LedController
+#ifdef MAX72_MATRIX
 ByteBlock Matrixdigits[30] = {
   { // 0: 0
     B00000000,
@@ -419,8 +431,16 @@ ByteBlock Matrixdigits[30] = {
     B00000000
   }
 };
+#endif
 short max72Initialisation[MAX72_SEGMENTS] = {0};
 LedController<1,1> available7segMax7219[MAX72_SEGMENTS];
+#endif
+
+#ifdef LCD_ADRESS
+// SDA-> A4
+// SCL-> A5
+#include "LiquidCrystal_I2C_DFRobot.h"
+LiquidCrystal_I2C I2CLCD(LCD_ADRESS, LCD_COLUMN, LCD_ROW);
 #endif
 
 short GetCacheIndexForDevice(short pin, short pinInitialisation[], short deviceCount) {
@@ -439,13 +459,6 @@ short GetCacheIndexForDevice(short pin, short pinInitialisation[], short deviceC
     }
   }  
 }
-
-#ifdef LCD_ADRESS
-// SDA-> A4
-// SCL-> A5
-#include "LiquidCrystal_I2C_DFRobot.h"
-LiquidCrystal_I2C I2CLCD(LCD_ADRESS, LCD_COLUMN, LCD_ROW);
-#endif
 
 void setup() {
   Serial.begin(SERIAL_BAUD);
@@ -490,7 +503,7 @@ void loop() {
     // No data to process
     return;
   }
-  serialString.trim();
+  // serialString.trim();
   if(serialString == "")  {
     // No data to process
     digitalWrite(LED_BUILTIN, HIGH);
@@ -519,27 +532,31 @@ void loop() {
   
   // 4 :length min des commandes
   while(serialString.length() > 4) {
-    short pin = serialString.substring(1, 3).toInt();
+    byte pin = serialString.substring(1, 3).toInt();
     char code = serialString.charAt(0);
 
     // Digital output
     if(code == 'd') {
+      #ifdef DIGITAL_OUTPUT
       if(arePinsInitialized[pin] == false) {
         pinMode(pin, OUTPUT);
         arePinsInitialized[pin] = true;
       }
-      short state = serialString.substring(3, 4).toInt();
+      byte state = serialString.substring(3, 4).toInt();
       digitalWrite(pin, state ? HIGH : LOW);
+      #endif
       serialString.remove(0, 4);
     }
     // Analog output
     else if(code == 'a') {
+      #ifdef ANALOG_OUTPUT
       if(arePinsInitialized[pin] == false) {
         pinMode(pin, OUTPUT);
         arePinsInitialized[pin] = true;
       }      
       short value = serialString.substring(3, 6).toInt();
       analogWrite(pin, value); 
+      #endif
       serialString.remove(0, 6);
     }
     // Servo
@@ -569,15 +586,15 @@ void loop() {
       } else {
         availabileTones[toneIdx].play(frequency); 
       }
-      serialString.remove(0, 7);
       #endif
+      serialString.remove(0, 7);
     }
     // Max 7seg Display mode SPI
     else if(code == 'm') {
-      short csPin = serialString.substring(3, 5).toInt();
-      short displayOffset = serialString.substring(5, 7).toInt();
-      short maxType = serialString.substring(7, 8).toInt();
-      short digitLen = serialString.substring(8, 10).toInt();
+      byte csPin = serialString.substring(3, 5).toInt();
+      byte displayOffset = serialString.substring(5, 7).toInt();
+      byte maxType = serialString.substring(7, 8).toInt();
+      byte digitLen = serialString.substring(8, 10).toInt();
       #ifdef MAX72_SEGMENTS
       // Use csPin as key to allow up to 3 value on a single max7219
       short maxIdx = GetCacheIndexForDevice(csPin, max72Initialisation, MAX72_SEGMENTS);
@@ -589,6 +606,7 @@ void loop() {
       }
       String numberToDisplay = serialString.substring(10, 10 + digitLen);
       if(maxType == 0) {
+        #ifdef MAX72_7SEG
         // 7 Seg
         // :m14140000888888888:#
         byte currDigitPosition = 0;
@@ -617,30 +635,36 @@ void loop() {
             }
             currDigitPosition++;
         }
+        #endif
       } else if(maxType == 1) {
         // Matrix 8x8
+        #ifdef MAX72_MATRIX
         numberToDisplay.trim();
         if(numberToDisplay == "") numberToDisplay = "29"; // 29 correspond à vide dans le tableau des caractères du matrix (Matrixdigits)
         available7segMax7219[maxIdx].displayOnSegment(0, 0, Matrixdigits[numberToDisplay.toInt()]);
+        #endif
       } else if(maxType == 2) {
         // Max72xx as led extension
-        if(digitLen == 24)  {
-          available7segMax7219[maxIdx].displayOnSegment(0, 0, {
-            (byte)numberToDisplay.substring(0, 3).toInt(),
-            (byte)numberToDisplay.substring(3, 6).toInt(),
-            (byte)numberToDisplay.substring(6, 9).toInt(),
-            (byte)numberToDisplay.substring(9, 12).toInt(),
-            (byte)numberToDisplay.substring(12, 15).toInt(),
-            (byte)numberToDisplay.substring(15, 18).toInt(),
-            (byte)numberToDisplay.substring(18, 21).toInt(),
-            (byte)numberToDisplay.substring(21, 24).toInt()
-          });
-        }        
+        #ifdef MAX72_LEDEXT
+        available7segMax7219[maxIdx].displayOnSegment(0, 0, {
+          (byte)numberToDisplay.substring(0, 3).toInt(),
+          (byte)numberToDisplay.substring(3, 6).toInt(),
+          (byte)numberToDisplay.substring(6, 9).toInt(),
+          (byte)numberToDisplay.substring(9, 12).toInt(),
+          (byte)numberToDisplay.substring(12, 15).toInt(),
+          (byte)numberToDisplay.substring(15, 18).toInt(),
+          (byte)numberToDisplay.substring(18, 21).toInt(),
+          (byte)numberToDisplay.substring(21, 24).toInt()
+        });
+        #endif
       }
       #endif
       serialString.remove(0, 10 + digitLen);
     }
     // lcd
+    // :m040400224038000000000000000000000t030055t050000:#
+    // :m040400224038000000000000000000000t030055t050000l18079Rouleaux de film pla|>Bratislava         |18,0t - dam 3,6%|327,1km      -6678mn:#
+    // :m040400224038000000000000000000000t030055t050000:#
     else if(code == 'l') {
       short stringLen = serialString.substring(3, 6).toInt();
       #ifdef LCD_ADRESS
@@ -685,7 +709,7 @@ void loop() {
           I2CLCD.setCursor(0, currentLine); 
         }
       }
-      #endif  
+      #endif
       serialString.remove(0, 6 + stringLen);
     }
     else {
