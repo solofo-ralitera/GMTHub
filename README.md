@@ -4,11 +4,11 @@ WIP
 
 This is a DIY dashboard for Euro Truck Simulator 2 and American Truck Simulator
 
-Features:
+## Features:
 
-- speedo and tacho from factor (frequency driven device)
+- speedo and tacho (frequency driven device)
 - servo gauge
-- LCD display
-- MAX7219 display (7 segments, dot matrix)
+- LCD display with several screens
+- MAX7219 display (8 digits 7 segments, dot matrix)
 - led extension up to 64 leds base on MAX7219
 - digital and analog output
