@@ -1,6 +1,6 @@
 //#include <Tone.h>
 
-int pin = 3;
+int pin = 5;
 int min = 31;
 int max = 210;
 void setup() {
@@ -8,7 +8,7 @@ void setup() {
 
   // pinMode(pin, OUTPUT);
   // analogWrite(pin, 240);
-  tone(pin, 68); //42
+  tone(pin, 220); //42
 }
 
 void loop() {

@@ -4,12 +4,12 @@
 #define LCD_COLUMN 20
 #define LCD_ROW 4
 
-// Use either tone or servo (both are not compatible each other)
-#define USE_TONE 1 
+// Use either tone or servo (both are not compatible each other), the value is the number of available device
+#define USE_TONE 2 
 // #define USE_SERVO 1
 
-// Maximum of max7219 that can be connected
-#define MAX72_SEGMENTS 4
+// Maximum of max7219 that can be connected (including: 7seg, dot matrix and led extension)
+#define MAX72_SEGMENTS 2
 
 // Serial port configuration
 #define SERIAL_BAUD 9600
@@ -140,7 +140,8 @@ Servo availableServos[TOTAL_NUMBER_OF_PIN];
 
 #ifdef USE_TONE
 #include <Tone.h>
-Tone availabileTones[TOTAL_NUMBER_OF_PIN];
+short toneInitialisation[USE_TONE] = {0};
+Tone availabileTones[USE_TONE];
 #endif
 
 #ifdef MAX72_SEGMENTS
@@ -420,23 +421,24 @@ ByteBlock Matrixdigits[30] = {
 };
 short max72Initialisation[MAX72_SEGMENTS] = {0};
 LedController<1,1> available7segMax7219[MAX72_SEGMENTS];
-short GetCacheIndexForMax72(short pin) {
+#endif
+
+short GetCacheIndexForDevice(short pin, short pinInitialisation[], short deviceCount) {
   byte i;
   // Reccup l'index de available7segMax7219 correspondant à pin
-  for(i = 0; i < MAX72_SEGMENTS; i++) {
-    if(max72Initialisation[i] == pin) {
+  for(i = 0; i < deviceCount; i++) {
+    if(pinInitialisation[i] == pin) {
       return i;
     }
   }
-  // Si l'index n'a pas été trouvé => nouvelle instance => premier indice libre dans max72Initialisation
-  for(i = 0; i < MAX72_SEGMENTS; i++) {
-    if(max72Initialisation[i] == 0) {
-      max72Initialisation[i] = pin; 
+  // Si l'index n'a pas été trouvé => nouvelle instance => premier indice libre dans pinInitialisation
+  for(i = 0; i < deviceCount; i++) {
+    if(pinInitialisation[i] == 0) {
+      pinInitialisation[i] = pin; 
       return i;
     }
   }  
 }
-#endif
 
 #ifdef LCD_ADRESS
 // SDA-> A4
@@ -555,12 +557,18 @@ void loop() {
     // Tone (device driven by frequency)
     else if(code == 't') {
       #ifdef USE_TONE
+      // :t030055:#
+      short toneIdx = GetCacheIndexForDevice(pin, toneInitialisation, USE_TONE);
       if(arePinsInitialized[pin] == false) {
-        availabileTones[pin].begin(pin);
+        availabileTones[toneIdx].begin(pin);
         arePinsInitialized[pin] = true;
       }
       short frequency = serialString.substring(3, 7).toInt();
-      availabileTones[pin].play(frequency); 
+      if(frequency == 0) {
+        availabileTones[toneIdx].stop(); 
+      } else {
+        availabileTones[toneIdx].play(frequency); 
+      }
       serialString.remove(0, 7);
       #endif
     }
@@ -572,7 +580,7 @@ void loop() {
       short digitLen = serialString.substring(8, 10).toInt();
       #ifdef MAX72_SEGMENTS
       // Use csPin as key to allow up to 3 value on a single max7219
-      short maxIdx = GetCacheIndexForMax72(csPin);
+      short maxIdx = GetCacheIndexForDevice(csPin, max72Initialisation, MAX72_SEGMENTS);
       if(arePinsInitialized[csPin] == false) {
         available7segMax7219[maxIdx] = LedController<1,1>(csPin); // Use SPI hardware instead of DIN,CLK,CS
         available7segMax7219[maxIdx].setIntensity(8);

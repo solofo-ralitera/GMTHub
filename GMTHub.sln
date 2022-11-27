@@ -3,7 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GMTHub", "GMTHub\GMTHub.csproj", "{2B5B35C8-04DF-4E2F-A8B0-3D580BCEE3ED}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GMTHubConsole", "GMTHubConsole\GMTHubConsole.csproj", "{2B5B35C8-04DF-4E2F-A8B0-3D580BCEE3ED}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C99909B3-D4DF-4ED5-A8BD-599382D7EA07} = {C99909B3-D4DF-4ED5-A8BD-599382D7EA07}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GMTHubLib", "GMTHubLib\GMTHubLib.csproj", "{C99909B3-D4DF-4ED5-A8BD-599382D7EA07}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GMTHubUi", "GMTHubUi\GMTHubUi.csproj", "{C233B70A-822E-42CE-B9DE-7B42FD9032F9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +22,14 @@ Global
 		{2B5B35C8-04DF-4E2F-A8B0-3D580BCEE3ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B5B35C8-04DF-4E2F-A8B0-3D580BCEE3ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B5B35C8-04DF-4E2F-A8B0-3D580BCEE3ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C99909B3-D4DF-4ED5-A8BD-599382D7EA07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C99909B3-D4DF-4ED5-A8BD-599382D7EA07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C99909B3-D4DF-4ED5-A8BD-599382D7EA07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C99909B3-D4DF-4ED5-A8BD-599382D7EA07}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C233B70A-822E-42CE-B9DE-7B42FD9032F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C233B70A-822E-42CE-B9DE-7B42FD9032F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C233B70A-822E-42CE-B9DE-7B42FD9032F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C233B70A-822E-42CE-B9DE-7B42FD9032F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
