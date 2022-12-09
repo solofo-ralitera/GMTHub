@@ -69,6 +69,31 @@ namespace GMTHubLib.GameProvider
                     notfilled = true
                 };
             }
+            if(!telemetryData.TruckValues_CurrentValues_ElectricEnabled)
+            {
+                // telemetryData.TruckValues_CurrentValues_DashboardValues_RPM = 0;
+                // telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value = 0;
+                
+                telemetryData.TruckValues_CurrentValues_DashboardValues_OilTemperature = 0;
+                telemetryData.TruckValues_CurrentValues_DashboardValues_OilPressure = 0;
+                telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_OilPressure = false;
+
+                telemetryData.TruckValues_CurrentValues_DashboardValues_WaterTemperature = 0;
+                telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_WaterTemperature = false;
+
+                telemetryData.TruckValues_CurrentValues_DashboardValues_AdBlue = 0;
+                telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AdBlue = false;
+
+                telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_AirPressure = 0;
+                telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AirPressure = false;
+                telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AirPressureEmergency = false;
+
+                telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_Amount = 0;
+                telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_FuelW = false;
+
+                telemetryData.TruckValues_CurrentValues_DashboardValues_CruiseControl = false;
+                telemetryData.TruckValues_CurrentValues_DifferentialLock = false;
+            }
             return new TelemetryData
             {
                 notfilled = false,

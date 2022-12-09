@@ -101,29 +101,31 @@ volatile uint8_t timer4_pin_mask;
 
 #if defined(__AVR_ATmega1280__)
 
-#define AVAILABLE_TONE_PINS 6
+#define AVAILABLE_TONE_PINS 5
 
+// SLF: don't use timer1, conflict with sero
+// SLF: Original: AVAILABLE_TONE_PINS + 1, remove timer1 from list tone_pin_to_timer_PGM
 // Leave timers 1, and zero to last.
-const uint8_t PROGMEM tone_pin_to_timer_PGM[] = { 2, 3, 4, 5, 1, 0 };
+const uint8_t PROGMEM tone_pin_to_timer_PGM[] = { 2, 3, 4, 5, 0 };
 
 #elif defined(__AVR_ATmega8__)
 
-#define AVAILABLE_TONE_PINS 2
+#define AVAILABLE_TONE_PINS 1
 
-const uint8_t PROGMEM tone_pin_to_timer_PGM[] = { 2, 1 };
+const uint8_t PROGMEM tone_pin_to_timer_PGM[] = { 2 };
 
 #elif defined(__AVR_ATmega32U4__)
 
-#define AVAILABLE_TONE_PINS 4
+#define AVAILABLE_TONE_PINS 3
 
-const uint8_t PROGMEM tone_pin_to_timer_PGM[] = { 4, 3, 1, 0 };
+const uint8_t PROGMEM tone_pin_to_timer_PGM[] = { 4, 3, 0 };
 
 #else
 
-#define AVAILABLE_TONE_PINS 3
+#define AVAILABLE_TONE_PINS 2 // Original: 3 
 
 // Leave timer 0 to last.
-const uint8_t PROGMEM tone_pin_to_timer_PGM[] = { 2, 1, 0 };
+const uint8_t PROGMEM tone_pin_to_timer_PGM[] = { 2, 0 }; 
 
 #endif
 
@@ -161,7 +163,9 @@ ISR(TIMER0_COMPA_vect)
 #ifdef WIRING
 void Tone_Timer1_Interrupt(void)
 #else
-ISR(TIMER1_COMPA_vect)
+void Tone_Timer1_Interrupt(void) // SLF: don't use timer1, conflict with sero
+// ISR(TIMER1_COMPA_vect)
+// void Tone_Timer1_Interrupt(void)
 #endif
 {
   if (timer1_toggle_count != 0)

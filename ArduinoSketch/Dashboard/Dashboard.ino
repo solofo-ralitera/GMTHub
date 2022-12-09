@@ -1,26 +1,25 @@
 #define BOARD_NUMBER "1"
 
 // Lcd display configuration
-#define LCD_ADRESS 0x27 // Use LCD?
+#define LCD_ADRESS 0x27 // Use LCD?, comment if none
 #define LCD_COLUMN 20
 #define LCD_ROW 4
 
-// Number of device using tone ore servo
-// Use one of tone or servo (both are not compatible each other), the value is the number of available device
+// Number of device using tone, comment if none
 #define USE_TONE 2 
-// #define USE_SERVO 1
 
-// Use analog output?
-// #define ANALOG_OUTPUT
+// Number of device using servo, comment if none
+#define USE_SERVO 1
 
-// Use digital output?
-// #define DIGITAL_OUTPUT
+// #define ANALOG_OUTPUT    // Use analog output?
 
-// Maximum of max7219 that can be connected (including: 7seg, dot matrix and led extension)
+// #define DIGITAL_OUTPUT   // Use digital output?
+
+// Number of connected max7219 (including: 7seg, dot matrix and led extension), comment if none
 #define MAX72_SEGMENTS 2
-// #define MAX72_7SEG // Use 7seg?
-// #define MAX72_MATRIX // Use dot matrix?
-#define MAX72_LEDEXT // // Use led extension?
+// #define MAX72_7SEG     // Use 7seg?
+// #define MAX72_MATRIX   // Use dot matrix?
+#define MAX72_LEDEXT      // Use led extension?
 
 // Serial port configuration
 #define SERIAL_BAUD 9600
@@ -146,7 +145,8 @@ boolean arePinsInitialized[TOTAL_NUMBER_OF_PIN] = { false };
 
 #ifdef USE_SERVO
 #include <Servo.h>
-Servo availableServos[TOTAL_NUMBER_OF_PIN];
+short servoInitialisation[USE_SERVO] = {0};
+Servo availableServos[USE_SERVO];
 #endif
 
 #ifdef USE_TONE
@@ -561,15 +561,17 @@ void loop() {
     }
     // Servo
     else if(code == 's') {
+      // :s10070:#
       #ifdef USE_SERVO
+      short servoIdx = GetCacheIndexForDevice(pin, servoInitialisation, USE_SERVO);
       if(arePinsInitialized[pin] == false) {
-        availableServos[pin].attach(pin);
+        availableServos[servoIdx].attach(pin);
         arePinsInitialized[pin] = true;
       }
-      short angle = serialString.substring(3, 6).toInt();
-      availableServos[pin].write(angle); 
+      short pulseWidth = serialString.substring(3, 7).toInt();
+      availableServos[servoIdx].write(pulseWidth); 
       #endif
-      serialString.remove(0, 6);
+      serialString.remove(0, 7);
     }
     // Tone (device driven by frequency)
     else if(code == 't') {

@@ -259,7 +259,7 @@ namespace GMTHubLib.Models
         {
             float value = StringUtils.ParseFloat(this.GetType().GetProperty(pinConfig.data_binding).GetValue(this, null).ToString());
 
-            // Physical limite of the servo
+            // Physical limit of the servo
             ushort servoMaxRange = pinConfig.servo_relative_max > 0 ? 
                 Math.Min(pinConfig.servo_max_range, pinConfig.servo_relative_max)
                 : pinConfig.servo_max_range;

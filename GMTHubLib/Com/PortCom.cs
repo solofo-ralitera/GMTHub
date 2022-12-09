@@ -146,6 +146,11 @@ namespace GMTHubLib.Com
         {
             while (true)
             {
+                if(Blinker.GameData == null)
+                {
+                    Thread.Sleep(boardConfig.refreshDelay);
+                    continue;
+                }
                 if (Blinker.GameData.notfilled)
                 {
                     Thread.Sleep(boardConfig.refreshDelay);

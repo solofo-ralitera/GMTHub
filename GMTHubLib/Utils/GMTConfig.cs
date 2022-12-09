@@ -70,6 +70,7 @@ namespace GMTHubLib.Utils
         public long cache;
         public bool has_page = false;
         public ushort current_page = 1;
+        public string page_key;
 
         // 7Seg, mode SPI hardware, pas besoin de din et clk
         // public ushort din_pin = 11;
@@ -114,7 +115,7 @@ namespace GMTHubLib.Utils
             ushort.TryParse(DictUtils.GetString(pinConfigs, "device_min_range"), out device_min_range);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "device_max_range"), out device_max_range);
             ushort.TryParse(DictUtils.GetString(pinConfigs, "current_page"), out current_page);
-            
+
 
             blink_if = DictUtils.GetString(pinConfigs, "blink_if", "");
             output_type = DictUtils.GetString(pinConfigs, "output_type", "");
@@ -122,6 +123,8 @@ namespace GMTHubLib.Utils
             discrete_value = DictUtils.GetString(pinConfigs, "discrete_value", "");
             matrix_value_correspondance = DictUtils.GetString(pinConfigs, "matrix_value_correspondance", "");
             max_type = DictUtils.GetString(pinConfigs, "max_type", "");
+            page_key = DictUtils.GetString(pinConfigs, "page_key", "");
+
             if (max_type == "matrix")
             {
                 // Pour affichage matrix: digit 2 max (clé du tableau MatrixNumber dans Arduino)
@@ -132,7 +135,7 @@ namespace GMTHubLib.Utils
 
             bool.TryParse(DictUtils.GetString(pinConfigs, "servo_reverse_rotation"), out servo_reverse_rotation);
             bool.TryParse(DictUtils.GetString(pinConfigs, "disabled"), out disabled);
-            bool.TryParse(DictUtils.GetString(pinConfigs, "has_page"), out has_page);            
+            bool.TryParse(DictUtils.GetString(pinConfigs, "has_page"), out has_page);
         }
     }
 
@@ -140,7 +143,7 @@ namespace GMTHubLib.Utils
     {
         protected IniData Data;
         public static Dictionary<byte, BoardConfig> Boards = new Dictionary<byte, BoardConfig>();
-        
+
         public GMTConfig(string gameIni)
         {
             FileIniDataParser deviceConfig = new FileIniDataParser();
@@ -187,7 +190,7 @@ namespace GMTHubLib.Utils
         public BoardConfig GetBoardConfig(byte boardNumber)
         {
             BoardConfig res;
-            if(GMTConfig.Boards.TryGetValue(boardNumber, out res) && res.pinConfig.Count > 0)
+            if (GMTConfig.Boards.TryGetValue(boardNumber, out res) && res.pinConfig.Count > 0)
             {
                 return res;
             }
@@ -209,14 +212,15 @@ namespace GMTHubLib.Utils
                         // boardsNumber.Add(boardNumber);
                         string name = (item.Keys["board_name"] ?? item.SectionName).Split(';')[0].Trim();
                         int refreshDelay;
-                        if (! int.TryParse(item.Keys["fps"], out refreshDelay))
+                        if (!int.TryParse(item.Keys["fps"], out refreshDelay))
                         {
                             refreshDelay = 25; // Correspond à 40fps
-                        } else
+                        }
+                        else
                         {
                             refreshDelay = (int)(1000 / refreshDelay);
                         }
-                        if(GMTConfig.Boards.ContainsKey(boardNumber))
+                        if (GMTConfig.Boards.ContainsKey(boardNumber))
                         {
                             GMTConfig.Boards.Remove(boardNumber);
                         }
@@ -234,7 +238,7 @@ namespace GMTHubLib.Utils
                     }
                 }
                 // Section BOARD_N.PIN_X
-                else if(Regex.Match(item.SectionName.Trim(), @"^BOARD_[0-9]{1,}\.PIN_[0-9]{1,}$").Success)
+                else if (Regex.Match(item.SectionName.Trim(), @"^BOARD_[0-9]{1,}\.PIN_[0-9]{1,}$").Success)
                 {
                     try
                     {
@@ -252,6 +256,10 @@ namespace GMTHubLib.Utils
                         {
                             pin = pinNumber,
                         };
+                        /*if (pinConfigs["disabled"] == "true" && !String.IsNullOrEmpty(pinConfigs["page_key"]))
+                        {
+                            ConsoleLog.Info("ici");
+                        }*/
                         pinConfig.SetAttributes(pinConfigs);
                         GMTConfig.Boards[boardNumber].pinConfig.Add(pinConfig);
                     }
@@ -317,7 +325,7 @@ namespace GMTHubLib.Utils
                     ObjectUtils.CopyValues(parentPinConfig, pinExtentionConfig);
                     parentPinConfig.pinExtensions.Add(pinExtentionConfig);
                 }
-            }            
+            }
         }
 
         public static void NextPage()
