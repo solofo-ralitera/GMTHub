@@ -277,23 +277,27 @@ namespace GMTHubLib.Utils
                         byte boardNumber = byte.Parse(boardPin[0].Replace("BOARD_", "").Trim());
                         byte pinNumber = byte.Parse(boardPin[1].Replace("PIN_", "").Trim());
                         byte extensionNumber = byte.Parse(boardPin[2].Trim());
-                        PinConfig parentPinConfig = GetBoardConfig(boardNumber).pinConfig.Find(pinConfig => pinConfig.pin == pinNumber);
-                        PinConfig pinExtentionConfig = new PinConfig()
+                        BoardConfig prtBoard = GetBoardConfig(boardNumber);
+                        if(prtBoard != null)
                         {
-                            pin = extensionNumber,
-                            output_type = "digital", // Uniquement digital supporté par max72
-                        };
-                        // TODO refactor avec le if précédent
-                        Dictionary<string, string> pinConfigs = new Dictionary<string, string>();
-                        foreach (KeyData key in item.Keys)
-                        {
-                            // Split ; pour enlever les comments
-                            pinConfigs.Add(key.KeyName.Trim(), key.Value.Split(';')[0].Trim());
-                        }
-                        pinExtentionConfig.SetAttributes(pinConfigs);
+                            PinConfig parentPinConfig = prtBoard.pinConfig.Find(pinConfig => pinConfig.pin == pinNumber);
+                            PinConfig pinExtentionConfig = new PinConfig()
+                            {
+                                pin = extensionNumber,
+                                output_type = "digital", // Uniquement digital supporté par max72
+                            };
+                            // TODO refactor avec le if précédent
+                            Dictionary<string, string> pinConfigs = new Dictionary<string, string>();
+                            foreach (KeyData key in item.Keys)
+                            {
+                                // Split ; pour enlever les comments
+                                pinConfigs.Add(key.KeyName.Trim(), key.Value.Split(';')[0].Trim());
+                            }
+                            pinExtentionConfig.SetAttributes(pinConfigs);
 
-                        ObjectUtils.CopyValues(parentPinConfig, pinExtentionConfig);
-                        parentPinConfig.pinExtensions.Add(pinExtentionConfig);
+                            ObjectUtils.CopyValues(parentPinConfig, pinExtentionConfig);
+                            parentPinConfig.pinExtensions.Add(pinExtentionConfig);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -307,23 +311,27 @@ namespace GMTHubLib.Utils
                     byte boardNumber = byte.Parse(boardPin[0].Replace("BOARD_", "").Trim());
                     byte pinNumber = byte.Parse(boardPin[1].Replace("PIN_", "").Trim());
                     byte pageNumber = byte.Parse(boardPin[2].Replace("PAGE_", "").Trim());
-                    PinConfig parentPinConfig = GetBoardConfig(boardNumber).pinConfig.Find(pinConfig => pinConfig.pin == pinNumber);
-                    PinConfig pinExtentionConfig = new PinConfig()
+                    BoardConfig prtBoard = GetBoardConfig(boardNumber);
+                    if (prtBoard != null)
                     {
-                        pin = pageNumber,
-                        output_type = "lcd",
-                    };
-                    // TODO refactor avec le if précédent
-                    Dictionary<string, string> pinConfigs = new Dictionary<string, string>();
-                    foreach (KeyData key in item.Keys)
-                    {
-                        // Split ; pour enlever les comments
-                        pinConfigs.Add(key.KeyName.Trim(), key.Value.Split(';')[0].Trim());
-                    }
-                    pinExtentionConfig.SetAttributes(pinConfigs);
+                        PinConfig parentPinConfig = prtBoard.pinConfig.Find(pinConfig => pinConfig.pin == pinNumber);
+                        PinConfig pinExtentionConfig = new PinConfig()
+                        {
+                            pin = pageNumber,
+                            output_type = "lcd",
+                        };
+                        // TODO refactor avec le if précédent
+                        Dictionary<string, string> pinConfigs = new Dictionary<string, string>();
+                        foreach (KeyData key in item.Keys)
+                        {
+                            // Split ; pour enlever les comments
+                            pinConfigs.Add(key.KeyName.Trim(), key.Value.Split(';')[0].Trim());
+                        }
+                        pinExtentionConfig.SetAttributes(pinConfigs);
 
-                    ObjectUtils.CopyValues(parentPinConfig, pinExtentionConfig);
-                    parentPinConfig.pinExtensions.Add(pinExtentionConfig);
+                        ObjectUtils.CopyValues(parentPinConfig, pinExtentionConfig);
+                        parentPinConfig.pinExtensions.Add(pinExtentionConfig);
+                    }
                 }
             }
         }

@@ -94,34 +94,41 @@ namespace GMTHubLib.GameProvider
                 telemetryData.TruckValues_CurrentValues_DashboardValues_CruiseControl = false;
                 telemetryData.TruckValues_CurrentValues_DifferentialLock = false;
             }
+            // Number of in-game minutes elapsed since Jan 1, 2001.
+            DateTime gameDate = new DateTime(2001, 1, 1, 0, 0, 0).AddMinutes(telemetryData.CommonValuesGameTime);
             return new TelemetryData
             {
                 notfilled = false,
                 blinker = Blinker,
+                vehicle_name = telemetryData.TruckValues_ConstantsValues_Brand + " " + telemetryData.TruckValues_ConstantsValues_Name,
 
                 rpm = (ushort)telemetryData.TruckValues_CurrentValues_DashboardValues_RPM,
                 rpm_max = (ushort)telemetryData.TruckValues_ConstantsValues_MotorValues_EngineRpmMax,
                 speed_ms = Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value),
-                speed_kph = (int) (Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value) * 3.6f),
-                speed_Mph = (int) (Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value) * 2.25f),
+                speed_kph = (int)(Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value) * 3.6f),
+                speed_Mph = (int)(Math.Abs(telemetryData.TruckValues_CurrentValues_DashboardValues_Speed_Value) * 2.25f),
 
                 gear = (sbyte)telemetryData.TruckValues_CurrentValues_DashboardValues_GearDashboards,
                 odometer = telemetryData.TruckValues_CurrentValues_DashboardValues_Odometer,
 
                 oilTemperature = telemetryData.TruckValues_CurrentValues_DashboardValues_OilTemperature,
                 oilPressure = telemetryData.TruckValues_CurrentValues_DashboardValues_OilPressure,
+                oilPressure_bar = telemetryData.TruckValues_CurrentValues_DashboardValues_OilPressure * 0.0689475729f,
                 oilPressure_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_OilPressure,
 
                 waterTemperature = telemetryData.TruckValues_CurrentValues_DashboardValues_WaterTemperature,
                 waterTemperature_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_WaterTemperature,
 
+                maxTemperature = Math.Max(telemetryData.TruckValues_CurrentValues_DashboardValues_WaterTemperature, telemetryData.TruckValues_CurrentValues_DashboardValues_OilTemperature),
+
                 adblue = telemetryData.TruckValues_CurrentValues_DashboardValues_AdBlue,
                 adblue_capacity = telemetryData.TruckValues_ConstantsValues_CapacityValues_AdBlue,
                 adblue_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AdBlue,
-                adblue_pct = (ushort) (telemetryData.TruckValues_CurrentValues_DashboardValues_AdBlue * 100 / telemetryData.TruckValues_ConstantsValues_CapacityValues_AdBlue),
+                adblue_pct = (ushort)(telemetryData.TruckValues_CurrentValues_DashboardValues_AdBlue * 100 / telemetryData.TruckValues_ConstantsValues_CapacityValues_AdBlue),
 
                 airPressure = telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_AirPressure,
-                airPressure_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AirPressure 
+                airPressure_bar = telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_AirPressure * 0.0689475729f,
+                airPressure_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AirPressure
                     || telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AirPressureEmergency,
 
                 batteryVoltage = telemetryData.TruckValues_CurrentValues_DashboardValues_BatteryVoltage,
@@ -132,7 +139,7 @@ namespace GMTHubLib.GameProvider
                 fuel_range = telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_Range,
                 fuel_capacity = telemetryData.TruckValues_ConstantsValues_CapacityValues_Fuel,
                 fuel_warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_FuelW,
-                fuel_pct = (ushort) (telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_Amount * 100 / telemetryData.TruckValues_ConstantsValues_CapacityValues_Fuel),
+                fuel_pct = (ushort)(telemetryData.TruckValues_CurrentValues_DashboardValues_FuelValue_Amount * 100 / telemetryData.TruckValues_ConstantsValues_CapacityValues_Fuel),
 
                 warning = telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_WaterTemperature
                     || telemetryData.TruckValues_CurrentValues_DashboardValues_WarningValues_AdBlue
@@ -154,6 +161,7 @@ namespace GMTHubLib.GameProvider
                 blinkerRight = telemetryData.TruckValues_CurrentValues_LightsValues_BlinkerRightOn,
                 hazardLight = telemetryData.TruckValues_CurrentValues_LightsValues_HazardWarningLights,
                 backLight = telemetryData.TruckValues_CurrentValues_LightsValues_DashboardBacklight,
+                auxLight = (telemetryData.TruckValues_CurrentValues_LightsValues_AuxFront > 0) || (telemetryData.TruckValues_CurrentValues_LightsValues_AuxRoof > 0),
 
                 speedLimit_ms = telemetryData.NavigationValues_SpeedLimit,
                 speedLimit_kph = telemetryData.NavigationValues_SpeedLimit * 3.6f,
@@ -190,6 +198,12 @@ namespace GMTHubLib.GameProvider
                 cargo_name = telemetryData.JobValues_CargoValues_Name,
                 cargo_destination = telemetryData.JobValues_CityDestination,
                 cargo_remaining_time = telemetryData.RemainingDeliveryTime,
+
+                retarder_count = (ushort)telemetryData.TruckValues_ConstantsValues_MotorValues_RetarderStepCount,
+                retarder = (ushort)telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_RetarderLevel,
+
+                time_local = DateTime.Now.ToString("HH:mm"),
+                time_game = gameDate.ToString("ddd HH:mm"),
             };
         }
     }

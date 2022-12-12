@@ -4,12 +4,16 @@ void setup()
 {
   Serial.begin(9600);
   servo1.attach(10);   
+  servo1.write(90);
 }
 int i = 0;
 void loop() 
 { 
-  if(i > 90) i = 0;
-  servo1.write(i);
-  i++;
-  delay(100);
+  /*servo1.write(0);
+  delay(500);
+  servo1.write(45);
+  delay(500);
+  servo1.write(90);
+  delay(500);*/
+
 }

@@ -18,6 +18,12 @@ namespace GMTHubLib.Models
     public class TelemetryData
     {
         public bool notfilled = false;
+        public string time_local { get; internal set; }
+
+        public string time_game { get; internal set; }
+
+        public string vehicle_name { get; internal set; }
+
         public ushort rpm { get; internal set; }
         public ushort rpm_max { get; internal set; }
         public float speed_ms { get; internal set; }
@@ -36,7 +42,9 @@ namespace GMTHubLib.Models
         public bool differentialLock { get; internal set; }
 
         public bool parkingBrake { get; internal set; }
+
         public bool motorBrake { get; internal set; }
+
         public bool wipers { get; internal set; }
         public bool blinkerLeft { get; internal set; }
         public bool blinkerRight { get; internal set; }
@@ -53,6 +61,7 @@ namespace GMTHubLib.Models
         public bool beaconLight { get; internal set; }
         public bool brakeLight { get; internal set; }
         public bool reverseLight { get; internal set; }
+        public bool auxLight { get; internal set; }
 
         /// <summary>
         /// 0: Off, 1: Dimmed, 2: Full
@@ -89,6 +98,7 @@ namespace GMTHubLib.Models
         /// Pressure of the oil in psi(pounds per square inch).
         /// </summary>
         public float oilPressure { get; internal set; }
+        public float oilPressure_bar { get; internal set; }
         public bool oilPressure_warning { get; internal set; }
         /// <summary>
         /// The loose approximation of the temperature of the oil in degrees celsius.
@@ -97,6 +107,8 @@ namespace GMTHubLib.Models
 
         public float waterTemperature { get; internal set; }
         public bool waterTemperature_warning { get; internal set; }
+
+        public float maxTemperature { get; internal set; }
 
         /// <summary>
         /// Amount of adBlue in litres. NOTE: This value will always be 0 in American Truck Simulator(ats).
@@ -110,6 +122,7 @@ namespace GMTHubLib.Models
         ///  Pressure in the brake air tank in psi(pounds per square inch).
         /// </summary>
         public float airPressure { get; internal set; }
+        public float airPressure_bar { get; internal set; }
         public bool airPressure_warning { get; internal set; }
          
         public float batteryVoltage { get; internal set; }
@@ -125,6 +138,10 @@ namespace GMTHubLib.Models
         /// </summary>
         public float cargoMass { get; internal set; }
         public float cargoMass_ton { get; internal set; }
+
+
+        public ushort retarder_count { get; internal set; }
+        public ushort retarder { get; internal set; }
 
         /// <summary>
         /// Navigation distance remaining until the next waypoint is hit OR distance remaining until the company of the delivery is reached. 
@@ -490,7 +507,7 @@ namespace GMTHubLib.Models
                 }
                 return templateTxt;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // Do Nothing: no match
                 return "";

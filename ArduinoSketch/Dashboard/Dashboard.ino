@@ -1,25 +1,26 @@
+// Id for this board, increment this value for each board used by GMTHub
 #define BOARD_NUMBER "1"
+
+// #define ANALOG_OUTPUT    // Use analog output?, comment if none
+
+// #define DIGITAL_OUTPUT   // Use digital output?, comment if none
+
+// Number of device using tone, comment if none (maximum = number of timer interupt - 1, because timer1 is used by servo)
+#define USE_TONE 2 
+
+// Number of device using servo, comment if none
+#define USE_SERVO 4
+
+// Number of connected max7219 (including: 7seg, dot matrix and led extension), comment if none
+#define MAX72_SEGMENTS 2
+#define MAX72_7SEG     // Use 7seg?
+// #define MAX72_MATRIX   // Use dot matrix?
+#define MAX72_LEDEXT      // Use led extension?
 
 // Lcd display configuration
 #define LCD_ADRESS 0x27 // Use LCD?, comment if none
 #define LCD_COLUMN 20
 #define LCD_ROW 4
-
-// Number of device using tone, comment if none
-#define USE_TONE 2 
-
-// Number of device using servo, comment if none
-#define USE_SERVO 1
-
-// #define ANALOG_OUTPUT    // Use analog output?
-
-// #define DIGITAL_OUTPUT   // Use digital output?
-
-// Number of connected max7219 (including: 7seg, dot matrix and led extension), comment if none
-#define MAX72_SEGMENTS 2
-// #define MAX72_7SEG     // Use 7seg?
-// #define MAX72_MATRIX   // Use dot matrix?
-#define MAX72_LEDEXT      // Use led extension?
 
 // Serial port configuration
 #define SERIAL_BAUD 9600
@@ -610,9 +611,7 @@ void loop() {
       if(maxType == 0) {
         #ifdef MAX72_7SEG
         // 7 Seg
-        // :m14140000888888888:#
         byte currDigitPosition = 0;
-        // available7segMax7219[maxIdx].clearSegment(0);
         for(int i=0; i < digitLen; i++) {
             bool hasDP = i < digitLen - 1 && numberToDisplay[i+ 1] == '.';
             if(numberToDisplay[i] == '.') {
@@ -639,7 +638,7 @@ void loop() {
         }
         #endif
       } else if(maxType == 1) {
-        // Matrix 8x8
+        // Dot Matrix 8x8
         #ifdef MAX72_MATRIX
         numberToDisplay.trim();
         if(numberToDisplay == "") numberToDisplay = "29"; // 29 correspond à vide dans le tableau des caractères du matrix (Matrixdigits)
@@ -664,9 +663,6 @@ void loop() {
       serialString.remove(0, 10 + digitLen);
     }
     // lcd
-    // :m040400224038000000000000000000000t030055t050000:#
-    // :m040400224038000000000000000000000t030055t050000l18079Rouleaux de film pla|>Bratislava         |18,0t - dam 3,6%|327,1km      -6678mn:#
-    // :m040400224038000000000000000000000t030055t050000:#
     else if(code == 'l') {
       short stringLen = serialString.substring(3, 6).toInt();
       #ifdef LCD_ADRESS
