@@ -203,7 +203,7 @@ namespace GMTHubLib.GameProvider
                 retarder = (ushort)telemetryData.TruckValues_CurrentValues_MotorValues_BrakeValues_RetarderLevel,
 
                 time_local = DateTime.Now.ToString("HH:mm"),
-                time_game = gameDate.ToString("ddd HH:mm"),
+                time_game = StringUtils.UppercaseFirst(gameDate.ToString("ddd HH:mm")),
             };
         }
     }

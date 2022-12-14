@@ -9,13 +9,14 @@
 #define USE_TONE 2 
 
 // Number of device using servo, comment if none
-#define USE_SERVO 4
+#define USE_SERVO 3
 
 // Number of connected max7219 (including: 7seg, dot matrix and led extension), comment if none
 #define MAX72_SEGMENTS 2
 #define MAX72_7SEG     // Use 7seg?
 // #define MAX72_MATRIX   // Use dot matrix?
 #define MAX72_LEDEXT      // Use led extension?
+#define MAX72_7SEG_INTENSITY 3
 
 // Lcd display configuration
 #define LCD_ADRESS 0x27 // Use LCD?, comment if none
@@ -603,7 +604,7 @@ void loop() {
       short maxIdx = GetCacheIndexForDevice(csPin, max72Initialisation, MAX72_SEGMENTS);
       if(arePinsInitialized[csPin] == false) {
         available7segMax7219[maxIdx] = LedController<1,1>(csPin); // Use SPI hardware instead of DIN,CLK,CS
-        available7segMax7219[maxIdx].setIntensity(8);
+        available7segMax7219[maxIdx].setIntensity(MAX72_7SEG_INTENSITY);
         available7segMax7219[maxIdx].clearMatrix();
         arePinsInitialized[csPin] = true;
       }
