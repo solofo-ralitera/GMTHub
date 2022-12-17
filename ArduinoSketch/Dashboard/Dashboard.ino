@@ -9,7 +9,7 @@
 #define USE_TONE 2 
 
 // Number of device using servo, comment if none
-#define USE_SERVO 3
+#define USE_SERVO 4
 
 // Number of connected max7219 (including: 7seg, dot matrix and led extension), comment if none
 #define MAX72_SEGMENTS 2

@@ -142,6 +142,7 @@ namespace GMTHubLib.Utils
     public class GMTConfig
     {
         protected IniData Data;
+        public static bool IsLoaded = false;
         public static Dictionary<byte, BoardConfig> Boards = new Dictionary<byte, BoardConfig>();
 
         public GMTConfig(string gameIni)
@@ -171,13 +172,20 @@ namespace GMTHubLib.Utils
                 watcher.EnableRaisingEvents = true;
                 watcher.Changed += (object sender, FileSystemEventArgs e) =>
                 {
-                    Data = deviceConfig.ReadFile(confFile.FullName);
-                    GetBoards();
+                    try
+                    {
+                        Data = deviceConfig.ReadFile(confFile.FullName);
+                        GetBoards();
+                    }
+                    catch (Exception ex)
+                    {
+                        ConsoleLog.Error($"Error in file configuration {gameIni}.ini : " + ex.Message);
+                    }
                 };
             }
             catch (Exception ex)
             {
-                ConsoleLog.Error("File GMTHUb error: " + ex.Message);
+                ConsoleLog.Error($"Error in file configuration {gameIni}.ini : " + ex.Message);
             }
         }
 
@@ -199,6 +207,7 @@ namespace GMTHubLib.Utils
 
         protected void GetBoards()
         {
+            IsLoaded = false;
             // List<int> boardsNumber = new List<int>();
             foreach (var item in Data.Sections)
             {
@@ -307,42 +316,53 @@ namespace GMTHubLib.Utils
                 // Section LCD page BOARD_N.PIN_X.PAGE_Y
                 else if (Regex.Match(item.SectionName.Trim(), @"^BOARD_[0-9]{1,}\.PIN_[0-9]{1,}\.PAGE_[0-9]{1,}$").Success)
                 {
-                    string[] boardPin = item.SectionName.Trim().Split('.');
-                    byte boardNumber = byte.Parse(boardPin[0].Replace("BOARD_", "").Trim());
-                    byte pinNumber = byte.Parse(boardPin[1].Replace("PIN_", "").Trim());
-                    byte pageNumber = byte.Parse(boardPin[2].Replace("PAGE_", "").Trim());
-                    BoardConfig prtBoard = GetBoardConfig(boardNumber);
-                    if (prtBoard != null)
+                    try
                     {
-                        PinConfig parentPinConfig = prtBoard.pinConfig.Find(pinConfig => pinConfig.pin == pinNumber);
-                        PinConfig pinExtentionConfig = new PinConfig()
+                        string[] boardPin = item.SectionName.Trim().Split('.');
+                        byte boardNumber = byte.Parse(boardPin[0].Replace("BOARD_", "").Trim());
+                        byte pinNumber = byte.Parse(boardPin[1].Replace("PIN_", "").Trim());
+                        byte pageNumber = byte.Parse(boardPin[2].Replace("PAGE_", "").Trim());
+                        BoardConfig prtBoard = GetBoardConfig(boardNumber);
+                        if (prtBoard != null)
                         {
-                            pin = pageNumber,
-                            output_type = "lcd",
-                        };
-                        // TODO refactor avec le if précédent
-                        Dictionary<string, string> pinConfigs = new Dictionary<string, string>();
-                        foreach (KeyData key in item.Keys)
-                        {
-                            // Split ; pour enlever les comments
-                            pinConfigs.Add(key.KeyName.Trim(), key.Value.Split(';')[0].Trim());
-                        }
-                        pinExtentionConfig.SetAttributes(pinConfigs);
+                            PinConfig parentPinConfig = prtBoard.pinConfig.Find(pinConfig => pinConfig.pin == pinNumber);
+                            PinConfig pinExtentionConfig = new PinConfig()
+                            {
+                                pin = pageNumber,
+                                output_type = "lcd",
+                            };
+                            // TODO refactor avec le if précédent
+                            Dictionary<string, string> pinConfigs = new Dictionary<string, string>();
+                            foreach (KeyData key in item.Keys)
+                            {
+                                // Split ; pour enlever les comments
+                                pinConfigs.Add(key.KeyName.Trim(), key.Value.Split(';')[0].Trim());
+                            }
+                            pinExtentionConfig.SetAttributes(pinConfigs);
 
-                        ObjectUtils.CopyValues(parentPinConfig, pinExtentionConfig);
-                        parentPinConfig.pinExtensions.Add(pinExtentionConfig);
+                            ObjectUtils.CopyValues(parentPinConfig, pinExtentionConfig);
+                            parentPinConfig.pinExtensions.Add(pinExtentionConfig);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ConsoleLog.Error("Config error - " + item.SectionName + ": " + ex.Message);
                     }
                 }
             }
+            IsLoaded = true;
         }
 
-        public static void NextPage()
+        public static void NextPage(string keyCode)
         {
             foreach (var item in GMTConfig.Boards)
             {
                 foreach (PinConfig pinConfig in item.Value.pinConfig)
                 {
-                    if (pinConfig.has_page && pinConfig.pinExtensions.Count > 0)
+                    if (!pinConfig.disabled
+                        && pinConfig.has_page
+                        && pinConfig.page_key == keyCode
+                        && pinConfig.pinExtensions.Count > 0)
                     {
                         int currentIndex = pinConfig.pinExtensions.FindIndex(p => p.pin == pinConfig.current_page);
                         if (currentIndex == -1 || pinConfig.pinExtensions.ElementAtOrDefault(currentIndex + 1) == null)

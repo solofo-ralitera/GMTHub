@@ -37,55 +37,79 @@ namespace GMTHubLib.Utils
 
         public static void Info(string message)
         {
-            if (textBox != null)
+            try
             {
-                textBox.AppendText(message, "Blue");
+                if (textBox != null)
+                {
+                    textBox.AppendText(message, "Blue");
+                }
+                else
+                {
+                    Console.WriteLine(message);
+                }
             }
-            else
+            catch (Exception)
             {
-                Console.WriteLine(message);
             }
         }
 
         public static void Gray(string message)
         {
-            if (textBox != null)
+            try
             {
-                textBox.AppendText(message, "DarkGray");
+                if (textBox != null)
+                {
+                    textBox.AppendText(message, "DarkGray");
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.WriteLine(message);
+                    Console.ResetColor();
+                }
             }
-            else
+            catch (Exception)
             {
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.WriteLine(message);
-                Console.ResetColor();
             }
         }
 
         public static void Success(string message)
         {
-            if (textBox != null)
+            try
             {
-                textBox.AppendText(message, "DarkGreen");
+                if (textBox != null)
+                {
+                    textBox.AppendText(message, "DarkGreen");
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                    Console.WriteLine(message);
+                    Console.ResetColor();
+                }
             }
-            else
+            catch (Exception)
             {
-                Console.ForegroundColor = ConsoleColor.DarkGreen;
-                Console.WriteLine(message);
-                Console.ResetColor();
             }
         }
 
         public static void Error(string message)
         {
-            if (textBox != null)
+            try
             {
-                textBox.AppendText(message, "DarkRed");
+                if (textBox != null)
+                {
+                    textBox.AppendText(message, "DarkRed");
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkRed;
+                    Console.WriteLine(message);
+                    Console.ResetColor();
+                }
             }
-            else
+            catch (Exception)
             {
-                Console.ForegroundColor = ConsoleColor.DarkRed;
-                Console.WriteLine(message);
-                Console.ResetColor();
             }
         }
     }
