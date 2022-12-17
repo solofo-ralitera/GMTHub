@@ -11,7 +11,7 @@ Use [Rencloud's SDK](https://github.com/RenCloud/scs-sdk-plugin), download ETS2 
 - servo gauge
 - LCD display with several screens
 - MAX7219 display (8 digits 7 segments, dot matrix)
-- led extension up to 64 leds base on MAX7219
+- led extension up to 64 leds bases on MAX7219
 - digital and analog output
 
 
